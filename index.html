@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dam Live Monitoring</title>
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 16px; background:#f6f6f6; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; }
+    .card { background:white; padding:14px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); min-width:220px; }
+    .big { font-size:34px; font-weight:700; }
+    .label { color:#666; font-size:13px; }
+    .badge { display:inline-block; padding:6px 10px; border-radius:999px; font-weight:700; }
+    .ok { background:#d7f7df; }
+    .warn { background:#fff1b8; }
+    .danger { background:#ffc9c9; }
+    .offline { background:#ddd; }
+    canvas { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:12px; }
+  </style>
+</head>
+
+<body>
+  <h2>Microcontroller-Based Dam Flood Level Monitoring</h2>
+
+  <div class="row">
+    <div class="card">
+      <div class="label">Water Level (cm)</div>
+      <div class="big" id="levelCm">--</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Level (%)</div>
+      <div class="big" id="levelPct">--</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Risk</div>
+      <div class="big"><span id="riskBadge" class="badge offline">--</span></div>
+    </div>
+
+    <div class="card">
+      <div class="label">Status</div>
+      <div class="big"><span id="onlineBadge" class="badge offline">OFFLINE</span></div>
+      <div class="label" id="lastSeen">Last update: --</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Rain</div>
+      <div class="big" id="rain">--</div>
+      <div class="label">0 = No Rain, 1 = Raining</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Gate</div>
+      <div class="big" id="gate">--</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:18px;">Live Trend</h3>
+  <canvas id="chart" width="900" height="320"></canvas>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase (v9 modular) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    // ✅ Put your Firebase config here (Project settings -> Web app)
+    const firebaseConfig = {
+      apiKey: "AIzaSy....",
+      authDomain: "dambase-700ee.firebaseapp.com",
+      databaseURL: "https://dambase-700ee-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dambase-700ee",
+      storageBucket: "dambase-700ee.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abcdef123456"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const damId = "dam1";
+    const currentRef = ref(db, `${damId}/current`);
+
+    // UI refs
+    const levelCmEl = document.getElementById("levelCm");
+    const levelPctEl = document.getElementById("levelPct");
+    const riskBadge = document.getElementById("riskBadge");
+    const onlineBadge = document.getElementById("onlineBadge");
+    const lastSeen = document.getElementById("lastSeen");
+    const rainEl = document.getElementById("rain");
+    const gateEl = document.getElementById("gate");
+
+    // Chart setup
+    const ctx = document.getElementById("chart");
+    const labels = [];
+    const data = [];
+
+    const chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label: "Level (%)",
+          data,
+          tension: 0.25
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        scales: {
+          y: { min: 0, max: 100 }
+        }
+      }
+    });
+
+    function setRiskBadge(risk) {
+      riskBadge.textContent = risk;
+      riskBadge.className = "badge " + (
+        risk === "NORMAL" ? "ok" :
+        risk === "ALERT"  ? "warn" :
+        risk === "DANGER" ? "danger" : "offline"
+      );
+    }
+
+    function setOnline(isOnline) {
+      onlineBadge.textContent = isOnline ? "ONLINE" : "OFFLINE";
+      onlineBadge.className = "badge " + (isOnline ? "ok" : "offline");
+    }
+
+    function fmtTimeAgo(ms) {
+      const sec = Math.max(0, Math.round((Date.now() - ms) / 1000));
+      return `${sec} sec ago`;
+    }
+
+    // Realtime listener
+    onValue(currentRef, (snapshot) => {
+      const v = snapshot.val();
+      if (!v) return;
+
+      const level_cm = Number(v.level_cm ?? 0);
+      const level_percent = Number(v.level_percent ?? 0);
+      const risk = (v.risk ?? "--").toString();
+      const rain = Number(v.rain ?? 0);
+      const gate = (v.gate ?? "--").toString();
+      const updated_at = Number(v.updated_at ?? 0);
+
+      levelCmEl.textContent = level_cm.toFixed(1);
+      levelPctEl.textContent = level_percent.toFixed(0);
+      setRiskBadge(risk);
+
+      rainEl.textContent = rain;
+      gateEl.textContent = gate;
+
+      const online = (Date.now() - updated_at) <= 15000; // 15 sec
+      setOnline(online);
+      lastSeen.textContent = `Last update: ${updated_at ? fmtTimeAgo(updated_at) : "--"}`;
+
+      // Update chart (keep last 60 points)
+      const now = new Date();
+      const label = now.toLocaleTimeString();
+      labels.push(label);
+      data.push(level_percent);
+
+      if (labels.length > 60) {
+        labels.shift();
+        data.shift();
+      }
+      chart.update();
+    });
+  </script>
+</body>
+</html>
