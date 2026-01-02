@@ -1,2 +1,6 @@
-# Dam_Live_Monitoring_Page
-6th semester Embedded Systems project
+
+* INTRODUCTION
+The global challenges of dam safety and flood risk management will continue to be serious issues due to the drastic changes in performance of dams when rapid elevation increases occur in reservoirs due to extreme weather events, which require timely and accurate operational decisions being made in response to these rapid changes.
+This issue has been illustrated by the recent flood disaster in Sri Lanka , which occurred as a result of delayed actions taken to prevent rapid water elevations, which had adverse social and infrastructure consequences. Therefore, incidents such as this demonstrate the need for a proactive, automated, and reliable dam management solution.
+The Smart Dam Safety System will provide a solution by integrating real-time forecasting of water levels, an early warning system, and an automated gate control system into one compact embedded device. This Smart Dam Safety System is designed to be utilized for the continuous monitoring of reservoir conditions and provide a forecast of future water level trends, allowing for the automatic adjustment of gate openings to the required height based on the predicted risk of overflow. Therefore, the Smart Dam Safety System does not require human operation, as it provides a fully automated solution. It offers a cost-effective and permanent solution to the challenges presented by extreme weather events and enhances dam safety while reducing reliance on human intervention, providing a scalable and commercially viable solution that can be utilized across all regions and economic conditions.
+
