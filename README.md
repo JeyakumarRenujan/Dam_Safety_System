@@ -1,6 +1,6 @@
-#INTELLIGENT DAM SAFETY SYSTEM FOR REAL-TIME WATER LEVEL FORECASTING AND AUTOMATED GATE CONTROL <br>
+# INTELLIGENT DAM SAFETY SYSTEM FOR REAL-TIME WATER LEVEL FORECASTING AND AUTOMATED GATE CONTROL <br>
 
-###INTRODUCTION:
+### INTRODUCTION:
 
 <p>The global challenges of dam safety and flood risk management will continue to be serious issues due to the drastic changes in performance of dams when rapid elevation increases occur in reservoirs due to extreme weather events, which require timely and accurate operational decisions being made in response to these rapid changes.</p>
 <p>This issue has been illustrated by the recent flood disaster in Sri Lanka , which occurred as a result of delayed actions taken to prevent rapid water elevations, which had adverse social and infrastructure consequences. Therefore, incidents such as this demonstrate the need for a proactive, automated, and reliable dam management solution.</p>
