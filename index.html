@@ -17,6 +17,7 @@
     .danger { background:#ffc9c9; }
     .offline { background:#ddd; }
     canvas { background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:12px; }
+    .small { font-size:12px; color:#777; margin-top:6px; }
   </style>
 </head>
 
@@ -45,15 +46,36 @@
       <div class="label" id="lastSeen">Last update: --</div>
     </div>
 
+    <!-- ✅ Weather (from API) -->
     <div class="card">
-      <div class="label">Rain</div>
-      <div class="big" id="rain">--</div>
-      <div class="label">0 = No Rain, 1 = Raining</div>
+      <div class="label">Rain (OpenWeather)</div>
+      <div class="big"><span id="rainMm">--</span></div>
+      <div class="label">mm in last 1 hour (rain_1h)</div>
+      <div class="small" id="weatherMeta">Weather: --</div>
     </div>
 
     <div class="card">
       <div class="label">Gate</div>
       <div class="big" id="gate">--</div>
+    </div>
+
+    <!-- ✅ Prediction cards -->
+    <div class="card">
+      <div class="label">Estimated Inflow</div>
+      <div class="big"><span id="inflow">--</span></div>
+      <div class="label">m³/s (from rain-runoff)</div>
+    </div>
+
+    <div class="card">
+      <div class="label">ETA to ALERT</div>
+      <div class="big"><span id="etaAlert">--</span></div>
+      <div class="label">minutes</div>
+    </div>
+
+    <div class="card">
+      <div class="label">ETA to DANGER</div>
+      <div class="big"><span id="etaDanger">--</span></div>
+      <div class="label">minutes</div>
     </div>
   </div>
 
@@ -63,12 +85,14 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase (v9 modular) -->
+  <!-- Firebase (v9 modular) + Weather -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-    // ✅ Put your Firebase config here (Project settings -> Web app)
+    // =========================
+    // 1) Firebase config (keep yours)
+    // =========================
     const firebaseConfig = {
       apiKey: "AIzaSy....",
       authDomain: "dambase-700ee.firebaseapp.com",
@@ -79,6 +103,29 @@
       appId: "1:1234567890:web:abcdef123456"
     };
 
+    // =========================
+    // 2) OpenWeather settings
+    // =========================
+    const OPENWEATHER_KEY = "583ffcef3156f7bec51a60f82a8c28fc";
+
+    // ✅ IMPORTANT: Put your dam area latitude and longitude here
+    // Example: Kandy ~ 7.2906, 80.6337
+    const LAT = 7.2906;
+    const LON = 80.6337;
+
+    // =========================
+    // 3) Dam prediction model values (edit if you want)
+    // =========================
+    const CATCHMENT_AREA_KM2 = 120;    // km^2 (assumed/demo)
+    const RUNOFF_COEFF = 0.55;         // 0..1
+    const SURFACE_AREA_M2 = 250000;    // m^2 (assumed/demo)
+
+    const ALERT_LEVEL_M = 18.0;        // meters
+    const DANGER_LEVEL_M = 20.0;       // meters
+
+    // =========================
+    // App init
+    // =========================
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
@@ -91,8 +138,13 @@
     const riskBadge = document.getElementById("riskBadge");
     const onlineBadge = document.getElementById("onlineBadge");
     const lastSeen = document.getElementById("lastSeen");
-    const rainEl = document.getElementById("rain");
     const gateEl = document.getElementById("gate");
+
+    const rainMmEl = document.getElementById("rainMm");
+    const weatherMetaEl = document.getElementById("weatherMeta");
+    const inflowEl = document.getElementById("inflow");
+    const etaAlertEl = document.getElementById("etaAlert");
+    const etaDangerEl = document.getElementById("etaDanger");
 
     // Chart setup
     const ctx = document.getElementById("chart");
@@ -112,9 +164,7 @@
       options: {
         responsive: true,
         animation: false,
-        scales: {
-          y: { min: 0, max: 100 }
-        }
+        scales: { y: { min: 0, max: 100 } }
       }
     });
 
@@ -137,7 +187,77 @@
       return `${sec} sec ago`;
     }
 
-    // Realtime listener
+    // =========================
+    // Weather fetch (OpenWeather current)
+    // =========================
+    let lastRainMm1h = 0;  // mm in last 1 hour
+
+    async function fetchWeather() {
+      try {
+        const url =
+          `https://api.openweathermap.org/data/2.5/weather?lat=${LAT}&lon=${LON}&appid=${OPENWEATHER_KEY}&units=metric`;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Weather HTTP " + res.status);
+
+        const w = await res.json();
+
+        // rain["1h"] may not exist if no rain
+        const rain1h = (w.rain && (w.rain["1h"] ?? w.rain["3h"])) ? (w.rain["1h"] ?? w.rain["3h"]) : 0;
+        lastRainMm1h = Number(rain1h) || 0;
+
+        const temp = (w.main && w.main.temp != null) ? w.main.temp : "--";
+        const desc = (w.weather && w.weather[0] && w.weather[0].description) ? w.weather[0].description : "--";
+
+        rainMmEl.textContent = lastRainMm1h.toFixed(2);
+        weatherMetaEl.textContent = `Weather: ${desc} | Temp: ${temp}°C`;
+
+        // Recompute prediction using latest rain + latest level
+        recomputePrediction();
+
+      } catch (e) {
+        weatherMetaEl.textContent = "Weather: error";
+        // Keep old rain value if error
+      }
+    }
+
+    // =========================
+    // Prediction logic (rain -> inflow -> rise -> ETA)
+    // =========================
+    let lastLevelCm = 0;
+
+    function calcInflowM3s(rainMmPerHour) {
+      // inflow = rain(m/hr) * catchment_area(m2) / 3600 * runoff
+      const rain_mph = rainMmPerHour * 1e-3;     // mm/hr -> m/hr
+      const area_m2 = CATCHMENT_AREA_KM2 * 1e6;  // km2 -> m2
+      return (rain_mph * area_m2 / 3600) * RUNOFF_COEFF; // m3/s
+    }
+
+    function etaMinutes(currentLevelM, targetLevelM, riseRateMps) {
+      if (riseRateMps <= 0) return null;
+      const sec = (targetLevelM - currentLevelM) / riseRateMps;
+      if (!isFinite(sec)) return null;
+      if (sec <= 0) return 0;
+      return Math.round(sec / 60);
+    }
+
+    function recomputePrediction() {
+      const levelM = (Number(lastLevelCm) || 0) / 100.0;
+
+      const inflow = calcInflowM3s(lastRainMm1h);
+      const riseRate = inflow / SURFACE_AREA_M2;  // m/s (very simple model)
+
+      const etaA = etaMinutes(levelM, ALERT_LEVEL_M, riseRate);
+      const etaD = etaMinutes(levelM, DANGER_LEVEL_M, riseRate);
+
+      inflowEl.textContent = isFinite(inflow) ? inflow.toFixed(3) : "--";
+      etaAlertEl.textContent = (etaA == null) ? "--" : etaA;
+      etaDangerEl.textContent = (etaD == null) ? "--" : etaD;
+    }
+
+    // =========================
+    // Firebase realtime listener
+    // =========================
     onValue(currentRef, (snapshot) => {
       const v = snapshot.val();
       if (!v) return;
@@ -145,15 +265,14 @@
       const level_cm = Number(v.level_cm ?? 0);
       const level_percent = Number(v.level_percent ?? 0);
       const risk = (v.risk ?? "--").toString();
-      const rain = Number(v.rain ?? 0);
       const gate = (v.gate ?? "--").toString();
       const updated_at = Number(v.updated_at ?? 0);
+
+      lastLevelCm = level_cm;
 
       levelCmEl.textContent = level_cm.toFixed(1);
       levelPctEl.textContent = level_percent.toFixed(0);
       setRiskBadge(risk);
-
-      rainEl.textContent = rain;
       gateEl.textContent = gate;
 
       const online = (Date.now() - updated_at) <= 15000; // 15 sec
@@ -162,16 +281,19 @@
 
       // Update chart (keep last 60 points)
       const now = new Date();
-      const label = now.toLocaleTimeString();
-      labels.push(label);
+      labels.push(now.toLocaleTimeString());
       data.push(level_percent);
 
-      if (labels.length > 60) {
-        labels.shift();
-        data.shift();
-      }
+      if (labels.length > 60) { labels.shift(); data.shift(); }
       chart.update();
+
+      // Update prediction (needs current level)
+      recomputePrediction();
     });
+
+    // Start weather loop
+    fetchWeather();                 // first fetch immediately
+    setInterval(fetchWeather, 600000); // every 10 minutes
   </script>
 </body>
 </html>
