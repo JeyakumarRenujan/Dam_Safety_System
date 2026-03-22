@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Dam Safety System</title>
+
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <!-- TOASTS -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div class="app-shell">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="logo-panel">
+        <div class="logo-mark">🌊</div>
+        <div>
+          <h2>Smart Dam</h2>
+          <p>Safety & Control</p>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <a href="#overview" class="nav-item active">Overview</a>
+        <a href="#analytics" class="nav-item">Analytics</a>
+        <a href="#operations" class="nav-item">Operations</a>
+        <a href="#forecast" class="nav-item">Forecast</a>
+        <a href="#logs" class="nav-item">Logs</a>
+      </nav>
+
+      <div class="side-status">
+        <div class="side-status-card">
+          <span class="side-label">Device</span>
+          <div id="deviceBadge" class="badge offline">
+            <span class="badge-dot"></span>
+            Device Offline
+          </div>
+        </div>
+
+        <div class="side-status-card">
+          <span class="side-label">Gate</span>
+          <div id="gateBadge" class="badge closed">
+            <span class="badge-dot"></span>
+            Gate Closed
+          </div>
+        </div>
+      </div>
+
+      <button
+        id="adminIconBtn"
+        class="admin-btn"
+        onclick="showLoginModal()"
+        title="Engineer Login"
+      >
+        👤 Engineer Login
+      </button>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-area">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">IoT Based Dam Monitoring & Control</p>
+          <h1>SCADA Monitoring Dashboard</h1>
+        </div>
+
+        <div class="topbar-right">
+          <div class="top-pill">
+            <span>Mode</span>
+            <strong id="heroModeText" class="neutral-text">AUTO</strong>
+          </div>
+          <div class="top-pill">
+            <span>Risk</span>
+            <strong id="heroRiskText" class="safe-text">SAFE</strong>
+          </div>
+        </div>
+      </header>
+
+      <!-- ALERT BANNER -->
+      <section id="globalAlertBanner" class="global-alert-banner safe-banner">
+        <div class="banner-icon">🟢</div>
+        <div>
+          <div class="banner-title">System Stable</div>
+          <div class="banner-subtitle">All monitored conditions are within normal operating range.</div>
+        </div>
+      </section>
+
+      <!-- OVERVIEW -->
+      <section id="overview" class="dashboard-grid">
+        <!-- LEFT -->
+        <div class="left-column">
+          <div class="cards-grid">
+            <article class="data-card level-card">
+              <div class="card-head">
+                <span class="card-title">Current Water Level</span>
+                <span class="chip">Live</span>
+              </div>
+              <div id="levelValue" class="big-value">-- cm</div>
+              <p id="level" class="subtext">Water Level: -- cm</p>
+            </article>
+
+            <article id="stateCard" class="data-card">
+              <div class="card-head">
+                <span class="card-title">System State</span>
+                <span id="stateChip" class="chip">Normal</span>
+              </div>
+              <div id="stateValue" class="big-value">SAFE</div>
+              <p id="state" class="subtext">Status: SAFE</p>
+            </article>
+
+            <article class="data-card">
+              <div class="card-head">
+                <span class="card-title">Gate Position</span>
+                <span class="chip">Control</span>
+              </div>
+              <div id="gateMainText" class="big-value medium-value">CLOSED</div>
+              <p id="gateText" class="subtext">Gate: CLOSED</p>
+            </article>
+
+            <article class="data-card">
+              <div class="card-head">
+                <span class="card-title">Control Mode</span>
+                <span class="chip">System</span>
+              </div>
+              <div id="modeValue" class="big-value medium-value">AUTO</div>
+              <p id="modeText" class="subtext">Mode: AUTO</p>
+            </article>
+
+            <article class="data-card forecast-card">
+              <div class="card-head">
+                <span class="card-title">Rain Forecast</span>
+                <span class="chip">Tomorrow</span>
+              </div>
+              <div class="forecast-row">
+                <div id="rainForecastIcon" class="forecast-icon">🌤️</div>
+                <div>
+                  <div id="rainForecastValue" class="big-value medium-value">0 mm</div>
+                  <p id="rainForecastText" class="subtext">Forecast rainfall</p>
+                </div>
+              </div>
+            </article>
+
+            <article id="predictionCard" class="data-card prediction-card">
+              <div class="card-head">
+                <span class="card-title">Predicted Level</span>
+                <span id="predictionChip" class="chip">Prediction</span>
+              </div>
+              <div id="predictedLevelValue" class="big-value medium-value">0 cm</div>
+              <p id="predictedStateText" class="subtext">Predicted state: SAFE</p>
+              <p id="recommendationText" class="subtext">Recommendation: No action needed</p>
+            </article>
+          </div>
+
+          <!-- ANALYTICS -->
+          <section id="analytics" class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Analytics</p>
+                <h3>Water Level Trend</h3>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="levelChart"></canvas>
+            </div>
+          </section>
+
+          <!-- RECENT READINGS TABLE -->
+          <section id="logs" class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Monitoring Logs</p>
+                <h3>Recent Readings</h3>
+              </div>
+
+              <div class="table-actions">
+                <button class="secondary-btn" onclick="clearReadingsHistory()">Clear</button>
+                <button class="primary-btn" onclick="downloadPDFReport()">Download PDF</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="readings-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Water Level (cm)</th>
+                    <th>State</th>
+                    <th>Gate</th>
+                    <th>Mode</th>
+                  </tr>
+                </thead>
+                <tbody id="readingsTableBody">
+                  <tr>
+                    <td colspan="5">No readings available yet</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="right-column">
+          <!-- GAUGE -->
+          <section class="panel gauge-panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Reservoir Gauge</p>
+                <h3>Animated Water Level</h3>
+              </div>
+            </div>
+
+            <div class="gauge-wrapper">
+              <div class="gauge">
+                <div id="gaugeWater" class="gauge-water">
+                  <div class="wave wave1"></div>
+                  <div class="wave wave2"></div>
+                </div>
+                <div class="gauge-center">
+                  <span id="gaugePercent">0%</span>
+                  <small>Capacity</small>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- GATE ANIMATION -->
+          <section id="operations" class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Mechanical View</p>
+                <h3>Gate Animation</h3>
+              </div>
+            </div>
+
+            <div class="gate-visual">
+              <div class="dam-wall"></div>
+              <div class="water-channel"></div>
+              <div id="flowEffect" class="flow-effect hidden"></div>
+              <div id="gateLeaf" class="gate-leaf"></div>
+            </div>
+            <p class="gate-caption">Live visual indication of sluice gate operation status.</p>
+          </section>
+
+          <!-- CONTROL PANEL -->
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Operations</p>
+                <h3>Gate Control</h3>
+              </div>
+            </div>
+
+            <div id="modeNote" class="mode-note">Automatic gate control active</div>
+
+            <div id="controlPanel" class="control-panel hidden">
+              <div class="admin-panel-header">
+                <div>
+                  <h4>Engineer Control Panel</h4>
+                  <p class="panel-helper">Authorized manual gate operation only</p>
+                </div>
+                <button id="adminLogoutBtn" class="secondary-btn" onclick="logoutAdmin()">Logout</button>
+              </div>
+
+              <div class="button-group">
+                <button id="openBtn" class="success-btn" onclick="openGate()">Open Gate</button>
+                <button id="closeBtn" class="danger-btn" onclick="closeGate()">Close Gate</button>
+                <button id="autoBtn" class="primary-btn" onclick="returnToAuto()">Return to Auto</button>
+              </div>
+
+              <p id="controlMessage" class="control-message">Authorized control enabled</p>
+            </div>
+
+            <div id="loggedOutPanel" class="logged-out-panel">
+              <div class="lock-icon">🔐</div>
+              <h4>Restricted Manual Access</h4>
+              <p>Login as an authorized engineer to control gate operations manually.</p>
+            </div>
+          </section>
+
+          <!-- FORECAST / SUMMARY -->
+          <section id="forecast" class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">System Summary</p>
+                <h3>Operational Snapshot</h3>
+              </div>
+            </div>
+
+            <div class="info-list">
+              <div class="info-item">
+                <span>Connection</span>
+                <strong id="infoConnection">Offline</strong>
+              </div>
+              <div class="info-item">
+                <span>Current State</span>
+                <strong id="infoState">SAFE</strong>
+              </div>
+              <div class="info-item">
+                <span>Gate Position</span>
+                <strong id="infoGate">CLOSED</strong>
+              </div>
+              <div class="info-item">
+                <span>Control Mode</span>
+                <strong id="infoMode">AUTO</strong>
+              </div>
+              <div class="info-item">
+                <span>Predicted Risk</span>
+                <strong id="infoPrediction">SAFE</strong>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div class="footer-left">
+          <strong>Smart Dam Safety System</strong>
+          <span>Embedded flood risk monitoring and automated control platform</span>
+        </div>
+        <div class="footer-right">
+          <span>Developed for IoT Based Dam Monitoring & Controlling Project</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="hideLoginModal()"></div>
+
+    <div class="modal-content">
+      <div class="modal-head">
+        <div class="modal-icon">🛡️</div>
+        <div>
+          <h3>Engineer Authentication</h3>
+          <p>Enter the authorized password to access manual gate control.</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="adminPassword">Password</label>
+        <input
+          type="password"
+          id="adminPassword"
+          placeholder="Enter password"
+          autocomplete="current-password"
+        />
+      </div>
+
+      <div class="button-group modal-buttons">
+        <button class="primary-btn" onclick="loginAdmin()">Login</button>
+        <button class="secondary-btn" onclick="hideLoginModal()">Cancel</button>
+      </div>
+
+      <p id="loginMessage" class="form-message"></p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
