@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Profile | Smart Dam Safety System</title>
+  <style>
+    :root {
+      --bg: #07101c;
+      --bg2: #0b1626;
+      --panel: rgba(12, 22, 37, 0.85);
+      --panel2: rgba(18, 30, 48, 0.9);
+      --border: rgba(148, 163, 184, 0.16);
+      --text: #e6eefc;
+      --muted: #93a7c3;
+      --white: #ffffff;
+      --blue: #3b82f6;
+      --blue2: #2563eb;
+      --green: #22c55e;
+      --shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --transition: 0.28s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at left top, rgba(59,130,246,0.18), transparent 24%),
+        radial-gradient(circle at right top, rgba(34,197,94,0.10), transparent 22%),
+        linear-gradient(180deg, #06101b 0%, #091320 40%, #07101c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+    }
+
+    .page-shell {
+      width: 100%;
+      max-width: 980px;
+    }
+
+    .profile-card {
+      background: rgba(12, 22, 37, 0.82);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      overflow: hidden;
+    }
+
+    .profile-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 22px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(11, 21, 35, 0.72);
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: #7fb7ff;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .profile-topbar h1 {
+      margin: 0;
+      color: white;
+      font-size: clamp(1.4rem, 2vw, 2rem);
+    }
+
+    .back-btn {
+      text-decoration: none;
+      min-height: 44px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      color: white;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--blue), var(--blue2));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .back-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .profile-body {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      padding: 26px;
+    }
+
+    .profile-left,
+    .profile-right {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .glass-panel {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .profile-photo-wrap {
+      text-align: center;
+    }
+
+    .profile-photo {
+      width: 100%;
+      max-width: 220px;
+      aspect-ratio: 1 / 1;
+      margin: 0 auto 16px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      background:
+        linear-gradient(135deg, rgba(59,130,246,0.18), rgba(34,197,94,0.10));
+      box-shadow: 0 20px 35px rgba(0,0,0,0.25);
+    }
+
+    .profile-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .profile-name {
+      margin: 0 0 8px;
+      font-size: 1.5rem;
+      color: white;
+      font-weight: 800;
+    }
+
+    .profile-role {
+      margin: 0;
+      color: #93c5fd;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .availability-badge {
+      margin-top: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #86efac;
+      background: rgba(34,197,94,0.14);
+      border: 1px solid rgba(34,197,94,0.2);
+    }
+
+    .badge-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    .section-title {
+      margin: 0 0 14px;
+      color: white;
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .about-text {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .info-item span {
+      color: var(--muted);
+    }
+
+    .info-item strong {
+      color: white;
+      text-align: right;
+    }
+
+    .skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .skill-chip {
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #dbeafe;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .contact-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .action-btn {
+      min-height: 46px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      color: white;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .linkedin-btn {
+      background: linear-gradient(135deg, #0a66c2, #004182);
+    }
+
+    .secondary-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #dbeafe;
+    }
+
+    .action-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .footer-note {
+      padding: 0 26px 26px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 860px) {
+      .profile-body {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .back-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <section class="profile-card">
+      <div class="profile-topbar">
+        <div>
+          <p class="eyebrow">Developer Profile</p>
+          <h1>UI Development Details</h1>
+        </div>
+        <a href="index.html" class="back-btn">← Back to Dashboard</a>
+      </div>
+
+      <div class="profile-body">
+        <div class="profile-left">
+          <div class="glass-panel profile-photo-wrap">
+            <div class="profile-photo">
+              <!-- Replace developer.jpg with your actual image file -->
+              <img src="img/jaanu.jpeg" alt="Developer Photo" />
+            </div>
+            <h2 class="profile-name">VARNAJA U.</h2>
+            <p class="profile-role">UI Developer</p>
+
+            <div class="availability-badge">
+              <span class="badge-dot"></span>
+              Project Contributor
+            </div>
+          </div>
+
+          <div class="glass-panel">
+            <h3 class="section-title">Quick Information</h3>
+            <div class="info-list">
+              <div class="info-item">
+                <span>Role</span>
+                <strong>Frontend / UI Developer</strong>
+              </div>
+              <div class="info-item">
+                <span>Project</span>
+                <strong>Smart Dam Safety System</strong>
+              </div>
+              <div class="info-item">
+                <span>Contribution</span>
+                <strong>Dashboard UI Design</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-right">
+          <div class="glass-panel">
+            <h3 class="section-title">About the Developer</h3>
+            <p class="about-text">
+              I am Varnaja Uthayaraj , a Computer Engineering final year student who thrives on creative thinking,
+              problem-solving and interested in systems security. With strong logical skills , 
+              I aim to contribute to innovative and efficient engineering solutions.
+            </p>
+          </div>
+
+          <div class="glass-panel">
+            <h3 class="section-title">Key Focus Areas</h3>
+            <div class="skills">
+              <span class="skill-chip">Dashboard UI</span>
+              <span class="skill-chip">Responsive Design</span>
+              <span class="skill-chip">Professional Layout</span>
+              <span class="skill-chip">Monitoring Interface</span>
+              <span class="skill-chip">User Experience</span>
+            </div>
+          </div>
+
+          <div class="glass-panel">
+            <h3 class="section-title">Professional Contact</h3>
+            <div class="contact-actions">
+              <!-- Replace with actual LinkedIn link -->
+              <a
+                href="https://www.linkedin.com/"
+                target="_blank"
+                class="action-btn linkedin-btn"
+              >
+                View LinkedIn
+              </a>
+
+              <a href="index.html" class="action-btn secondary-btn">
+                Return to Dashboard
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-note">
+        This profile page is linked from the main dashboard footer so developer
+        details can be updated separately without changing the main monitoring UI.
+      </div>
+    </section>
+  </div>
+</body>
+</html>
