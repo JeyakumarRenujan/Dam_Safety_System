@@ -189,9 +189,14 @@ function buildFallbackPrediction(level, state) {
   };
 }
 
-function updateGauge(levelCm) {
-  const maxLevel = 100;
-  const percent = Math.max(0, Math.min(100, Math.round((levelCm / maxLevel) * 100)));
+function updateGauge(distanceCm) {
+  const maxDistance = 100; // <-- change based on your sensor height
+
+  let percent = 100 - (distanceCm / maxDistance) * 100;
+
+  // clamp between 0 and 100
+  percent = Math.max(0, Math.min(100, Math.round(percent)));
+
   gaugeWater.style.height = percent + "%";
   gaugePercent.innerText = percent + "%";
 }
