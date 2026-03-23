@@ -55,7 +55,7 @@ body {
   padding: 22px 18px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 17px;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -131,7 +131,7 @@ body {
 
 .side-label {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 7px;
   font-size: 12px;
   color: var(--muted);
   letter-spacing: 0.08em;
@@ -141,7 +141,7 @@ body {
 
 .admin-btn {
   margin-top: auto;
-  min-height: 56px;
+  min-height: 47px;
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 18px;
