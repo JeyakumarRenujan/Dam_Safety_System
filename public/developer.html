@@ -28,6 +28,11 @@
       box-sizing: border-box;
     }
 
+    html,
+    body {
+      height: 100%;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -37,15 +42,14 @@
         radial-gradient(circle at left top, rgba(59,130,246,0.18), transparent 24%),
         radial-gradient(circle at right top, rgba(34,197,94,0.10), transparent 22%),
         linear-gradient(180deg, #06101b 0%, #091320 40%, #07101c 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 28px;
+      
+      padding: 10px 14px;
     }
 
     .page-shell {
       width: 100%;
-      max-width: 980px;
+      max-width: 1080px;
+      margin: 0 auto;
     }
 
     .profile-card {
@@ -61,8 +65,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 14px;
-      padding: 22px 24px;
+      gap: 12px;
+      padding: 14px 18px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
       background: rgba(11, 21, 35, 0.72);
     }
@@ -79,13 +83,14 @@
     .profile-topbar h1 {
       margin: 0;
       color: white;
-      font-size: clamp(1.4rem, 2vw, 2rem);
+      font-size: 1.9rem;
+      line-height: 1.15;
     }
 
     .back-btn {
       text-decoration: none;
-      min-height: 44px;
-      padding: 12px 16px;
+      min-height: 42px;
+      padding: 11px 16px;
       border-radius: 14px;
       color: white;
       font-weight: 700;
@@ -95,6 +100,9 @@
       justify-content: center;
       transition: var(--transition);
       white-space: nowrap;
+      box-shadow:
+        0 14px 28px rgba(37, 99, 235, 0.28),
+        inset 0 1px 0 rgba(255,255,255,0.16);
     }
 
     .back-btn:hover {
@@ -103,23 +111,24 @@
 
     .profile-body {
       display: grid;
-      grid-template-columns: 320px 1fr;
-      gap: 24px;
-      padding: 26px;
+      grid-template-columns: 270px 1fr;
+      gap: 14px;
+      padding: 14px;
+      align-items: start;
     }
 
     .profile-left,
     .profile-right {
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
     }
 
     .glass-panel {
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 20px;
-      padding: 20px;
+      border-radius: 18px;
+      padding: 14px;
     }
 
     .profile-photo-wrap {
@@ -128,15 +137,15 @@
 
     .profile-photo {
       width: 100%;
-      max-width: 220px;
+      max-width: 150px;
       aspect-ratio: 1 / 1;
-      margin: 0 auto 16px;
-      border-radius: 24px;
+      margin: 0 auto 10px;
+      border-radius: 20px;
       overflow: hidden;
       border: 1px solid rgba(255,255,255,0.1);
       background:
         linear-gradient(135deg, rgba(59,130,246,0.18), rgba(34,197,94,0.10));
-      box-shadow: 0 20px 35px rgba(0,0,0,0.25);
+      box-shadow: 0 16px 28px rgba(0,0,0,0.24);
     }
 
     .profile-photo img {
@@ -147,29 +156,31 @@
     }
 
     .profile-name {
-      margin: 0 0 8px;
-      font-size: 1.5rem;
+      margin: 0 0 4px;
+      font-size: 1rem;
       color: white;
       font-weight: 800;
+      line-height: 1.2;
     }
 
     .profile-role {
       margin: 0;
       color: #93c5fd;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
+      line-height: 1.4;
     }
 
     .availability-badge {
-      margin-top: 16px;
+      margin-top: 10px;
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-radius: 999px;
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 700;
       color: #86efac;
       background: rgba(34,197,94,0.14);
@@ -185,42 +196,45 @@
     }
 
     .section-title {
-      margin: 0 0 14px;
+      margin: 0 0 10px;
       color: white;
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       font-weight: 800;
     }
 
     .about-text {
       margin: 0;
       color: var(--muted);
-      font-size: 15px;
-      line-height: 1.8;
+      font-size: 13px;
+      line-height: 1.6;
     }
 
     .info-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .info-item {
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      padding: 14px 16px;
-      border-radius: 16px;
+      padding: 10px 12px;
+      border-radius: 14px;
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.06);
     }
 
     .info-item span {
       color: var(--muted);
+      font-size: 13px;
     }
 
     .info-item strong {
       color: white;
       text-align: right;
+      font-size: 14px;
+      line-height: 1.4;
     }
 
     .skills {
@@ -230,9 +244,9 @@
     }
 
     .skill-chip {
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-radius: 999px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: #dbeafe;
       background: rgba(255,255,255,0.05);
@@ -246,9 +260,10 @@
     }
 
     .action-btn {
-      min-height: 46px;
-      padding: 12px 18px;
+      min-height: 40px;
+      padding: 10px 16px;
       border-radius: 14px;
+      font-size: 14px;
       color: white;
       font-weight: 700;
       text-decoration: none;
@@ -260,6 +275,9 @@
 
     .linkedin-btn {
       background: linear-gradient(135deg, #0a66c2, #004182);
+      box-shadow:
+        0 14px 26px rgba(10, 102, 194, 0.25),
+        inset 0 1px 0 rgba(255,255,255,0.12);
     }
 
     .secondary-btn {
@@ -272,14 +290,11 @@
       transform: translateY(-2px);
     }
 
-    .footer-note {
-      padding: 0 26px 26px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.7;
-    }
+    @media (max-width: 980px) {
+      body {
+        padding: 12px;
+      }
 
-    @media (max-width: 860px) {
       .profile-body {
         grid-template-columns: 1fr;
       }
@@ -292,6 +307,41 @@
       .back-btn {
         width: 100%;
       }
+
+      .profile-photo {
+        max-width: 200px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .profile-topbar {
+        padding: 16px;
+      }
+
+      .profile-body {
+        padding: 16px;
+        gap: 14px;
+      }
+
+      .glass-panel {
+        padding: 16px;
+      }
+
+      .contact-actions {
+        flex-direction: column;
+      }
+
+      .action-btn {
+        width: 100%;
+      }
+
+      .info-item {
+        flex-direction: column;
+      }
+
+      .info-item strong {
+        text-align: left;
+      }
     }
   </style>
 </head>
@@ -301,7 +351,7 @@
       <div class="profile-topbar">
         <div>
           <p class="eyebrow">Developer Profile</p>
-          <h1>UI Development Details</h1>
+          <h1>Web Development Details</h1>
         </div>
         <a href="index.html" class="back-btn">← Back to Dashboard</a>
       </div>
@@ -310,15 +360,15 @@
         <div class="profile-left">
           <div class="glass-panel profile-photo-wrap">
             <div class="profile-photo">
-              <!-- Replace developer.jpg with your actual image file -->
               <img src="img/jaanu.jpeg" alt="Developer Photo" />
             </div>
+
             <h2 class="profile-name">VARNAJA U.</h2>
-            <p class="profile-role">UI Developer</p>
+            <p class="profile-role">Full Stack Web Developer</p>
 
             <div class="availability-badge">
               <span class="badge-dot"></span>
-              Project Contributor
+              Core Project Contributor
             </div>
           </div>
 
@@ -327,7 +377,7 @@
             <div class="info-list">
               <div class="info-item">
                 <span>Role</span>
-                <strong>Frontend / UI Developer</strong>
+                <strong>Frontend & Backend Developer</strong>
               </div>
               <div class="info-item">
                 <span>Project</span>
@@ -335,7 +385,7 @@
               </div>
               <div class="info-item">
                 <span>Contribution</span>
-                <strong>Dashboard UI Design</strong>
+                <strong>Complete Web System Development</strong>
               </div>
             </div>
           </div>
@@ -345,27 +395,28 @@
           <div class="glass-panel">
             <h3 class="section-title">About the Developer</h3>
             <p class="about-text">
-              I am Varnaja Uthayaraj , a Computer Engineering final year student who thrives on creative thinking,
-              problem-solving and interested in systems security. With strong logical skills , 
-              I aim to contribute to innovative and efficient engineering solutions.
+              I am Varnaja Uthayaraj, a Computer Engineering final year student
+              who thrives on creative thinking, problem-solving, and is
+              interested in systems security. With strong logical skills, I aim
+              to contribute to innovative and efficient engineering solutions.
             </p>
           </div>
 
           <div class="glass-panel">
             <h3 class="section-title">Key Focus Areas</h3>
             <div class="skills">
-              <span class="skill-chip">Dashboard UI</span>
-              <span class="skill-chip">Responsive Design</span>
-              <span class="skill-chip">Professional Layout</span>
-              <span class="skill-chip">Monitoring Interface</span>
-              <span class="skill-chip">User Experience</span>
+              <span class="skill-chip">Frontend Development</span>
+              <span class="skill-chip">Backend Development</span>
+              <span class="skill-chip">Web System Design</span>
+              <span class="skill-chip">Responsive Interface</span>
+              <span class="skill-chip">Problem Solving</span>
+              <span class="skill-chip">Systems Security</span>
             </div>
           </div>
 
           <div class="glass-panel">
             <h3 class="section-title">Professional Contact</h3>
             <div class="contact-actions">
-              <!-- Replace with actual LinkedIn link -->
               <a
                 href="https://www.linkedin.com/"
                 target="_blank"
@@ -380,11 +431,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="footer-note">
-        This profile page is linked from the main dashboard footer so developer
-        details can be updated separately without changing the main monitoring UI.
       </div>
     </section>
   </div>
