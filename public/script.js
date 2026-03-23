@@ -553,11 +553,11 @@ socket.on("update", (data) => {
 
   if (previousRiskState && previousRiskState !== state) {
     if (state === "ALARM") {
-      showToast("warning", "Alarm State", "Reservoir conditions have moved to ALARM level.");
+      showToast("warning", "Warning", "Reservoir conditions have moved to ALARM level.");
     } else if (state === "DANGER") {
-      showToast("danger", "Danger State", "Critical flood risk detected. Immediate attention required.");
+      showToast("danger", "Danger", "Critical flood risk detected. Immediate attention required.");
     } else if (state === "SAFE") {
-      showToast("safe", "System Safe", "System has returned to safe operating condition.");
+      showToast("safe", "Safe", "System has returned to safe operating condition.");
     }
   }
   previousRiskState = state;
