@@ -1,5 +1,11 @@
+/* ==========================================================================
+   SMART DAM SAFETY SYSTEM - SCADA CLIENT APPLICATION LOGIC
+   Production-grade WebSocket, UI updates, chart rendering & supervisory control
+   ========================================================================== */
+
 const socket = io();
 
+// State variables
 let deviceConnected = false;
 let gateStatus = "CLOSED";
 let controlMode = "AUTO";
@@ -7,124 +13,243 @@ let isAdmin = false;
 let previousRiskState = null;
 let previousGateStatus = null;
 let previousDeviceStatus = null;
+const readingsHistory = [];
 
-/* EXISTING ELEMENTS */
+/* --------------------------------------------------------------------------
+   DOM ELEMENT SELECTORS
+   -------------------------------------------------------------------------- */
+// Status & Header Elements
 const levelEl = document.getElementById("level");
 const stateEl = document.getElementById("state");
 const gateText = document.getElementById("gateText");
 const modeText = document.getElementById("modeText");
-
-const deviceBadge = document.getElementById("deviceBadge");
-const gateBadge = document.getElementById("gateBadge");
-
-const openBtn = document.getElementById("openBtn");
-const closeBtn = document.getElementById("closeBtn");
-const autoBtn = document.getElementById("autoBtn");
-
-const controlPanel = document.getElementById("controlPanel");
-const controlMessage = document.getElementById("controlMessage");
-
-const loginModal = document.getElementById("loginModal");
-const loginMessage = document.getElementById("loginMessage");
-const adminPasswordInput = document.getElementById("adminPassword");
-
-/* CARD ELEMENTS */
-const levelValue = document.getElementById("levelValue");
-const stateValue = document.getElementById("stateValue");
-const modeValue = document.getElementById("modeValue");
-const modeNote = document.getElementById("modeNote");
-const gateMainText = document.getElementById("gateMainText");
-
-const stateCard = document.getElementById("stateCard");
-const stateChip = document.getElementById("stateChip");
+const liveSystemClock = document.getElementById("liveSystemClock");
 const heroRiskText = document.getElementById("heroRiskText");
 const heroModeText = document.getElementById("heroModeText");
 const globalAlertBanner = document.getElementById("globalAlertBanner");
-const loggedOutPanel = document.getElementById("loggedOutPanel");
+const bannerLastUpdated = document.getElementById("bannerLastUpdated");
 
+// Badges
+const deviceBadge = document.getElementById("deviceBadge");
+const mobileDeviceBadge = document.getElementById("mobileDeviceBadge");
+const gateBadge = document.getElementById("gateBadge");
+const gateVisualBadge = document.getElementById("gateVisualBadge");
+const capacityStatusText = document.getElementById("capacityStatusText");
+
+// Metric Cards Elements
+const levelValue = document.getElementById("levelValue");
+const stateCard = document.getElementById("stateCard");
+const stateChip = document.getElementById("stateChip");
+const stateValue = document.getElementById("stateValue");
+const gateMainText = document.getElementById("gateMainText");
+const modeValue = document.getElementById("modeValue");
+const modeNote = document.getElementById("modeNote");
+
+const rainForecastValue = document.getElementById("rainForecastValue");
+const rainForecastText = document.getElementById("rainForecastText");
+const rainForecastIcon = document.getElementById("rainForecastIcon");
+
+const predictionCard = document.getElementById("predictionCard");
+const predictionChip = document.getElementById("predictionChip");
+const predictedLevelValue = document.getElementById("predictedLevelValue");
+const predictedStateText = document.getElementById("predictedStateText");
+const recommendationText = document.getElementById("recommendationText");
+
+// Visual Gauge & Actuators
+const gaugeWater = document.getElementById("gaugeWater");
+const gaugePercent = document.getElementById("gaugePercent");
+const gaugeCapacityLabel = document.getElementById("gaugeCapacityLabel");
+const gateLeaf = document.getElementById("gateLeaf");
+const flowEffect = document.getElementById("flowEffect");
+
+// Operational Snapshot
 const infoConnection = document.getElementById("infoConnection");
 const infoState = document.getElementById("infoState");
 const infoGate = document.getElementById("infoGate");
 const infoMode = document.getElementById("infoMode");
 const infoPrediction = document.getElementById("infoPrediction");
 
-const rainForecastValue = document.getElementById("rainForecastValue");
-const rainForecastText = document.getElementById("rainForecastText");
-const rainForecastIcon = document.getElementById("rainForecastIcon");
-const predictedLevelValue = document.getElementById("predictedLevelValue");
-const predictedStateText = document.getElementById("predictedStateText");
-const recommendationText = document.getElementById("recommendationText");
-const predictionCard = document.getElementById("predictionCard");
-const predictionChip = document.getElementById("predictionChip");
+// Engineer Control Panel
+const controlPanel = document.getElementById("controlPanel");
+const controlMessage = document.getElementById("controlMessage");
+const loggedOutPanel = document.getElementById("loggedOutPanel");
+const openBtn = document.getElementById("openBtn");
+const closeBtn = document.getElementById("closeBtn");
+const autoBtn = document.getElementById("autoBtn");
+const adminLogoutBtn = document.getElementById("adminLogoutBtn");
+const adminIconBtn = document.getElementById("adminIconBtn");
 
-const gaugeWater = document.getElementById("gaugeWater");
-const gaugePercent = document.getElementById("gaugePercent");
+// Login Modal
+const loginModal = document.getElementById("loginModal");
+const loginMessage = document.getElementById("loginMessage");
+const adminPasswordInput = document.getElementById("adminPassword");
 
-const gateLeaf = document.getElementById("gateLeaf");
-const flowEffect = document.getElementById("flowEffect");
+// Mobile Drawer Elements
+const menuToggleBtn = document.getElementById("menuToggleBtn");
+const appSidebar = document.getElementById("appSidebar");
+const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+const navItems = document.querySelectorAll(".nav-item");
 
+// Table & Toast
 const toastContainer = document.getElementById("toastContainer");
 const readingsTableBody = document.getElementById("readingsTableBody");
-const readingsHistory = [];
 
-/* CHART */
-const ctx = document.getElementById("levelChart").getContext("2d");
-const gradient = ctx.createLinearGradient(0, 0, 0, 360);
-gradient.addColorStop(0, "rgba(59, 130, 246, 0.34)");
-gradient.addColorStop(1, "rgba(59, 130, 246, 0.02)");
+/* --------------------------------------------------------------------------
+   LIVE SYSTEM CLOCK
+   -------------------------------------------------------------------------- */
+function updateSystemClock() {
+  if (!liveSystemClock) return;
+  const now = new Date();
+  liveSystemClock.innerText = now.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
+}
+setInterval(updateSystemClock, 1000);
+updateSystemClock();
 
-const levelChart = new Chart(ctx, {
-  type: "line",
-  data: {
-    labels: [],
-    datasets: [
-      {
-        label: "Water Level (cm)",
-        data: [],
-        borderColor: "#60a5fa",
-        backgroundColor: gradient,
-        pointBackgroundColor: "#93c5fd",
-        pointBorderColor: "#60a5fa",
-        pointRadius: 3,
-        pointHoverRadius: 5,
-        borderWidth: 3,
-        tension: 0.35,
-        fill: true
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: "rgba(9,16,28,0.96)",
-        titleColor: "#ffffff",
-        bodyColor: "#dbeafe",
-        borderColor: "rgba(148,163,184,0.2)",
-        borderWidth: 1,
-        padding: 12
-      }
+/* --------------------------------------------------------------------------
+   CHART SETUP (Chart.js)
+   -------------------------------------------------------------------------- */
+const chartCanvas = document.getElementById("levelChart");
+const ctx = chartCanvas ? chartCanvas.getContext("2d") : null;
+
+let levelChart = null;
+
+if (ctx) {
+  const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+  gradient.addColorStop(0, "rgba(59, 130, 246, 0.35)");
+  gradient.addColorStop(1, "rgba(59, 130, 246, 0.02)");
+
+  levelChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [
+        {
+          label: "Water Distance (cm)",
+          data: [],
+          borderColor: "#60a5fa",
+          backgroundColor: gradient,
+          pointBackgroundColor: "#93c5fd",
+          pointBorderColor: "#3b82f6",
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          borderWidth: 2.5,
+          tension: 0.38,
+          fill: true
+        }
+      ]
     },
-    scales: {
-      x: {
-        ticks: { color: "#9fb1c9" },
-        grid: { color: "rgba(148,163,184,0.08)" },
-        title: { display: true, text: "Time", color: "#9fb1c9" }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "rgba(10, 21, 38, 0.94)",
+          titleColor: "#ffffff",
+          bodyColor: "#93c5fd",
+          borderColor: "rgba(148, 163, 184, 0.2)",
+          borderWidth: 1,
+          padding: 12,
+          displayColors: false,
+          callbacks: {
+            label: (context) => `Distance: ${context.parsed.y} cm`
+          }
+        }
       },
-      y: {
-        beginAtZero: true,
-        ticks: { color: "#9fb1c9" },
-        grid: { color: "rgba(148,163,184,0.08)" },
-        title: { display: true, text: "Water Level (cm)", color: "#9fb1c9" }
+      scales: {
+        x: {
+          ticks: { color: "#64748b", font: { family: "'JetBrains Mono', monospace", size: 11 } },
+          grid: { color: "rgba(148, 163, 184, 0.06)" }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: "#64748b", font: { family: "'JetBrains Mono', monospace", size: 11 } },
+          grid: { color: "rgba(148, 163, 184, 0.06)" },
+          title: {
+            display: true,
+            text: "Distance to Surface (cm)",
+            color: "#64748b",
+            font: { size: 11, weight: "600" }
+          }
+        }
+      }
+    }
+  });
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE DRAWER & NAVIGATION
+   -------------------------------------------------------------------------- */
+function openSidebar() {
+  if (appSidebar) appSidebar.classList.add("open");
+  if (sidebarBackdrop) sidebarBackdrop.classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function closeSidebar() {
+  if (appSidebar) appSidebar.classList.remove("open");
+  if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+  document.body.style.overflow = "";
+}
+
+if (menuToggleBtn) {
+  menuToggleBtn.addEventListener("click", () => {
+    if (appSidebar && appSidebar.classList.contains("open")) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+}
+
+if (sidebarBackdrop) {
+  sidebarBackdrop.addEventListener("click", closeSidebar);
+}
+
+// Nav link click & active state handling
+navItems.forEach((item) => {
+  item.addEventListener("click", (e) => {
+    navItems.forEach((n) => n.classList.remove("active"));
+    item.classList.add("active");
+    if (window.innerWidth <= 1080) {
+      closeSidebar();
+    }
+  });
+});
+
+// Scrollspy for active navigation tracking
+window.addEventListener("scroll", () => {
+  const scrollPosition = window.scrollY + 160;
+  const sections = ["overview", "analytics", "operations", "forecast", "logs"];
+
+  for (const id of sections) {
+    const section = document.getElementById(id);
+    if (section) {
+      const top = section.offsetTop;
+      const height = section.offsetHeight;
+      if (scrollPosition >= top && scrollPosition < top + height) {
+        navItems.forEach((link) => {
+          if (link.getAttribute("href") === `#${id}`) {
+            link.classList.add("active");
+          } else {
+            link.classList.remove("active");
+          }
+        });
+        break;
       }
     }
   }
 });
 
-/* HELPERS */
+/* --------------------------------------------------------------------------
+   UI HELPERS & TOASTS
+   -------------------------------------------------------------------------- */
 function setText(el, value) {
   if (el) el.innerText = value;
 }
@@ -135,6 +260,8 @@ function removeClasses(el, classes) {
 }
 
 function showToast(type, title, message) {
+  if (!toastContainer) return;
+
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
   toast.innerHTML = `
@@ -146,15 +273,15 @@ function showToast(type, title, message) {
   setTimeout(() => {
     toast.style.opacity = "0";
     toast.style.transform = "translateX(20px)";
-    toast.style.transition = "0.35s ease";
-    setTimeout(() => toast.remove(), 350);
-  }, 3500);
+    toast.style.transition = "0.3s ease";
+    setTimeout(() => toast.remove(), 320);
+  }, 4500);
 }
 
 function getRainIcon(mm) {
   if (mm <= 5) return "🌤️";
   if (mm <= 20) return "🌦️";
-  if (mm <= 50) return "🌧️";
+  if (mm <= 40) return "🌧️";
   return "⛈️";
 }
 
@@ -162,129 +289,199 @@ function buildFallbackPrediction(level, state) {
   let rainfallTomorrow = 0;
   let predictedLevel = level;
   let predictedState = state;
-  let recommendation = "No action needed";
+  let recommendation = "Standard telemetry monitoring";
 
   if (state === "SAFE") {
     rainfallTomorrow = 8;
-    predictedLevel = level + 5;
+    predictedLevel = Math.max(0, level - 4);
     predictedState = "SAFE";
-    recommendation = "Continue automatic monitoring";
+    recommendation = "Normal conditions: continue automated monitoring.";
   } else if (state === "ALARM") {
     rainfallTomorrow = 28;
-    predictedLevel = level + 12;
+    predictedLevel = Math.max(0, level - 8);
     predictedState = "ALARM";
-    recommendation = "Prepare preventive discharge and monitor closely";
+    recommendation = "Elevated reservoir inflow: prepare controlled release.";
   } else {
     rainfallTomorrow = 55;
-    predictedLevel = level + 18;
+    predictedLevel = Math.max(0, level - 14);
     predictedState = "DANGER";
-    recommendation = "Immediate response recommended";
+    recommendation = "Critical flood risk: immediate spillway gate discharge advised.";
   }
 
-  return {
-    rainfallTomorrow,
-    predictedLevel,
-    predictedState,
-    recommendation
-  };
+  return { rainfallTomorrow, predictedLevel, predictedState, recommendation };
 }
 
+/* --------------------------------------------------------------------------
+   RESERVOIR LIQUID GAUGE LOGIC
+   Sensor mounted 30cm above bed.
+   Distance > 25cm -> <17% (Safe)
+   Distance 10-25cm -> 17-67% (Alarm)
+   Distance < 10cm -> >67% (Danger)
+   -------------------------------------------------------------------------- */
 function updateGauge(distanceCm) {
-  const maxDistance = 100; // <-- change based on your sensor height
+  if (!gaugeWater || !gaugePercent) return;
 
-  let percent = 100 - (distanceCm / maxDistance) * 100;
+  if (!deviceConnected && distanceCm === 0) {
+    gaugeWater.style.height = "0%";
+    gaugePercent.innerText = "0%";
+    if (gaugeCapacityLabel) gaugeCapacityLabel.innerText = "Offline";
+    if (capacityStatusText) {
+      capacityStatusText.innerText = "Standby";
+      capacityStatusText.className = "chip";
+    }
+    return;
+  }
 
-  // clamp between 0 and 100
-  percent = Math.max(0, Math.min(100, Math.round(percent)));
+  const maxSensorDepth = 30; // Total depth from sensor to dam bottom (cm)
+  const waterDepth = Math.max(0, maxSensorDepth - distanceCm);
+  let percent = Math.round((waterDepth / maxSensorDepth) * 100);
+  percent = Math.max(0, Math.min(100, percent));
 
-  gaugeWater.style.height = percent + "%";
-  gaugePercent.innerText = percent + "%";
+  gaugeWater.style.height = `${percent}%`;
+  gaugePercent.innerText = `${percent}%`;
+
+  if (percent > 67) {
+    gaugeWater.style.background = "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)";
+    if (gaugeCapacityLabel) gaugeCapacityLabel.innerText = "Critical Level";
+    if (capacityStatusText) {
+      capacityStatusText.innerText = "Danger";
+      capacityStatusText.className = "chip chip-danger";
+    }
+  } else if (percent >= 17) {
+    gaugeWater.style.background = "linear-gradient(180deg, #f59e0b 0%, #d97706 100%)";
+    if (gaugeCapacityLabel) gaugeCapacityLabel.innerText = "Elevated Inflow";
+    if (capacityStatusText) {
+      capacityStatusText.innerText = "Alarm";
+      capacityStatusText.className = "chip chip-alarm";
+    }
+  } else {
+    gaugeWater.style.background = "linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%)";
+    if (gaugeCapacityLabel) gaugeCapacityLabel.innerText = "Safe Capacity";
+    if (capacityStatusText) {
+      capacityStatusText.innerText = "Optimal";
+      capacityStatusText.className = "chip chip-normal";
+    }
+  }
 }
 
+/* --------------------------------------------------------------------------
+   SLUICE GATE MECHANICAL ANIMATION
+   -------------------------------------------------------------------------- */
 function updateGateAnimation() {
+  if (!gateLeaf || !flowEffect) return;
+
   gateLeaf.classList.remove("opened", "moving");
   flowEffect.classList.add("hidden");
 
   if (gateStatus === "OPEN") {
     gateLeaf.classList.add("opened");
     flowEffect.classList.remove("hidden");
+    if (gateVisualBadge) {
+      gateVisualBadge.innerText = "Open (Discharging)";
+      gateVisualBadge.className = "badge-mini online";
+    }
   } else if (gateStatus === "MOVING") {
     gateLeaf.classList.add("moving");
+    if (gateVisualBadge) {
+      gateVisualBadge.innerText = "Actuating...";
+      gateVisualBadge.className = "badge-mini closed";
+    }
+  } else {
+    if (gateVisualBadge) {
+      gateVisualBadge.innerText = "Closed";
+      gateVisualBadge.className = "badge-mini closed";
+    }
   }
 }
 
+/* --------------------------------------------------------------------------
+   RISK THEME & ALERT BANNER
+   -------------------------------------------------------------------------- */
 function setRiskTheme(state) {
-  removeClasses(stateCard, ["state-safe", "state-alarm", "state-danger"]);
-  removeClasses(heroRiskText, ["safe-text", "alarm-text", "danger-text"]);
   removeClasses(globalAlertBanner, ["safe-banner", "alarm-banner", "danger-banner"]);
+  removeClasses(heroRiskText, ["safe-text", "alarm-text", "danger-text"]);
+  removeClasses(stateValue, ["state-safe-text", "state-alarm-text", "state-danger-text"]);
+  removeClasses(stateChip, ["chip-normal", "chip-alarm", "chip-danger"]);
+
+  const bannerTitle = globalAlertBanner?.querySelector(".banner-title");
+  const bannerSubtitle = globalAlertBanner?.querySelector(".banner-subtitle");
 
   if (state === "SAFE") {
-    stateCard.classList.add("state-safe");
-    heroRiskText.classList.add("safe-text");
-    globalAlertBanner.classList.add("safe-banner");
+    globalAlertBanner?.classList.add("safe-banner");
+    heroRiskText?.classList.add("safe-text");
+    stateValue?.classList.add("state-safe-text");
+    stateChip?.classList.add("chip-normal");
+
     setText(stateChip, "Normal");
     setText(heroRiskText, "SAFE");
-    globalAlertBanner.querySelector(".banner-icon").innerText = "🟢";
-    globalAlertBanner.querySelector(".banner-title").innerText = "System Stable";
-    globalAlertBanner.querySelector(".banner-subtitle").innerText =
-      "All monitored conditions are within normal operating range.";
+    if (bannerTitle) bannerTitle.innerText = "System Stable - Normal Operating Limit";
+    if (bannerSubtitle) bannerSubtitle.innerText = "All monitored reservoir parameters are operating within safe baseline limits.";
   } else if (state === "ALARM") {
-    stateCard.classList.add("state-alarm");
-    heroRiskText.classList.add("alarm-text");
-    globalAlertBanner.classList.add("alarm-banner");
+    globalAlertBanner?.classList.add("alarm-banner");
+    heroRiskText?.classList.add("alarm-text");
+    stateValue?.classList.add("state-alarm-text");
+    stateChip?.classList.add("chip-alarm");
+
     setText(stateChip, "Warning");
     setText(heroRiskText, "ALARM");
-    globalAlertBanner.querySelector(".banner-icon").innerText = "🟠";
-    globalAlertBanner.querySelector(".banner-title").innerText = "Preventive Attention Required";
-    globalAlertBanner.querySelector(".banner-subtitle").innerText =
-      "Reservoir conditions indicate elevated risk. Monitoring and preventive action may be required.";
+    if (bannerTitle) bannerTitle.innerText = "Preventive Attention Required";
+    if (bannerSubtitle) bannerSubtitle.innerText = "Elevated reservoir level detected. Continuous monitoring and spillway preparation active.";
   } else {
-    stateCard.classList.add("state-danger");
-    heroRiskText.classList.add("danger-text");
-    globalAlertBanner.classList.add("danger-banner");
+    globalAlertBanner?.classList.add("danger-banner");
+    heroRiskText?.classList.add("danger-text");
+    stateValue?.classList.add("state-danger-text");
+    stateChip?.classList.add("chip-danger");
+
     setText(stateChip, "Critical");
     setText(heroRiskText, "DANGER");
-    globalAlertBanner.querySelector(".banner-icon").innerText = "🔴";
-    globalAlertBanner.querySelector(".banner-title").innerText = "Critical Flood Risk Detected";
-    globalAlertBanner.querySelector(".banner-subtitle").innerText =
-      "Immediate response is recommended due to critical overflow risk conditions.";
+    if (bannerTitle) bannerTitle.innerText = "Critical Flood Risk Detected";
+    if (bannerSubtitle) bannerSubtitle.innerText = "Spillway discharge active or recommended to prevent reservoir overtopping.";
   }
 
   setText(infoState, state);
+  if (infoState) {
+    infoState.className = `info-val ${state === "SAFE" ? "val-safe" : state === "ALARM" ? "val-alarm" : "val-danger"}`;
+  }
 }
 
 function setPredictionTheme(predictedState) {
   removeClasses(predictionCard, ["prediction-safe", "prediction-alarm", "prediction-danger"]);
 
   if (predictedState === "SAFE") {
-    predictionCard.classList.add("prediction-safe");
+    predictionCard?.classList.add("prediction-safe");
     setText(predictionChip, "Low Risk");
     setText(infoPrediction, "SAFE");
+    if (infoPrediction) infoPrediction.className = "info-val val-safe";
   } else if (predictedState === "ALARM") {
-    predictionCard.classList.add("prediction-alarm");
-    setText(predictionChip, "Watch");
+    predictionCard?.classList.add("prediction-alarm");
+    setText(predictionChip, "Watch Alert");
     setText(infoPrediction, "ALARM");
+    if (infoPrediction) infoPrediction.className = "info-val val-alarm";
   } else {
-    predictionCard.classList.add("prediction-danger");
-    setText(predictionChip, "Critical");
+    predictionCard?.classList.add("prediction-danger");
+    setText(predictionChip, "Severe Risk");
     setText(infoPrediction, "DANGER");
+    if (infoPrediction) infoPrediction.className = "info-val val-danger";
   }
 }
 
 function updatePredictionUI(prediction, level, state) {
   const p = prediction || buildFallbackPrediction(level, state);
 
-  setText(rainForecastValue, p.rainfallTomorrow + " mm");
-  setText(rainForecastText, "Forecast rainfall");
+  setText(rainForecastValue, `${p.rainfallTomorrow} mm`);
+  setText(rainForecastText, "Expected rainfall next 24h");
   setText(rainForecastIcon, getRainIcon(Number(p.rainfallTomorrow || 0)));
 
-  setText(predictedLevelValue, p.predictedLevel + " cm");
-  setText(predictedStateText, "Predicted state: " + p.predictedState);
-  setText(recommendationText, "Recommendation: " + p.recommendation);
+  setText(predictedLevelValue, `${p.predictedLevel} cm`);
+  setText(predictedStateText, `Forecast State: ${p.predictedState}`);
+  setText(recommendationText, `Recommendation: ${p.recommendation}`);
 
   setPredictionTheme(p.predictedState);
 }
 
+/* --------------------------------------------------------------------------
+   TELEMETRY LOGS TABLE
+   -------------------------------------------------------------------------- */
 function getStateClass(state) {
   if (state === "SAFE") return "reading-safe";
   if (state === "ALARM") return "reading-alarm";
@@ -297,7 +494,16 @@ function renderReadingsTable() {
   if (readingsHistory.length === 0) {
     readingsTableBody.innerHTML = `
       <tr>
-        <td colspan="5">No readings available yet</td>
+        <td colspan="5" class="empty-table-cell">
+          <div class="empty-state-box">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p>No telemetry readings recorded yet. Awaiting packets from ESP8266.</p>
+          </div>
+        </td>
       </tr>
     `;
     return;
@@ -306,7 +512,7 @@ function renderReadingsTable() {
   readingsTableBody.innerHTML = readingsHistory.map((reading) => `
     <tr>
       <td>${reading.time}</td>
-      <td>${reading.level}</td>
+      <td><strong>${reading.level}</strong> cm</td>
       <td class="${getStateClass(reading.state)}">${reading.state}</td>
       <td>${reading.gate}</td>
       <td>${reading.mode}</td>
@@ -316,27 +522,24 @@ function renderReadingsTable() {
 
 async function clearReadingsHistory() {
   try {
-    const response = await fetch("/api/history", {
-      method: "DELETE"
-    });
-
+    const response = await fetch("/api/history", { method: "DELETE" });
     const result = await response.json();
 
     if (result.success) {
       readingsHistory.length = 0;
       renderReadingsTable();
-      showToast("warning", "History Cleared", "Recent readings table has been cleared.");
+      showToast("warning", "History Cleared", "Telemetry logs have been cleared from memory.");
     } else {
       showToast("danger", "Clear Failed", "Could not clear readings history.");
     }
   } catch (error) {
-    showToast("danger", "Clear Failed", "Server error while clearing history.");
+    showToast("danger", "Clear Failed", "Server error while clearing logs.");
   }
 }
 
 function downloadPDFReport() {
   if (!window.jspdf || !window.jspdf.jsPDF) {
-    showToast("danger", "PDF Error", "PDF library not loaded.");
+    showToast("danger", "PDF Error", "PDF generation library failed to load.");
     return;
   }
 
@@ -344,61 +547,78 @@ function downloadPDFReport() {
   const doc = new jsPDF();
 
   doc.setFontSize(18);
-  doc.text("Smart Dam Safety System", 14, 18);
+  doc.setTextColor(30, 41, 59);
+  doc.text("Intelligent Dam Safety System", 14, 20);
 
   doc.setFontSize(11);
-  doc.text("Monitoring Report", 14, 26);
-  doc.text("Generated: " + new Date().toLocaleString(), 14, 33);
+  doc.setTextColor(71, 85, 105);
+  doc.text("SCADA Operational Telemetry & Safety Report", 14, 28);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 35);
 
   doc.setFontSize(10);
-  doc.text("Current Water Level: " + (levelValue?.innerText || "--"), 14, 45);
-  doc.text("Current State: " + (stateValue?.innerText || "--"), 14, 52);
-  doc.text("Gate Status: " + (gateMainText?.innerText || "--"), 14, 59);
-  doc.text("Control Mode: " + (modeValue?.innerText || "--"), 14, 66);
+  doc.text(`Current Water Distance: ${levelValue?.innerText || "--"}`, 14, 46);
+  doc.text(`System Safety State: ${stateValue?.innerText || "--"}`, 14, 53);
+  doc.text(`Sluice Gate Status: ${gateMainText?.innerText || "--"}`, 14, 60);
+  doc.text(`Supervisory Mode: ${modeValue?.innerText || "--"}`, 14, 67);
 
   const rows = readingsHistory.map((r) => [
     r.time,
-    String(r.level),
+    `${r.level} cm`,
     r.state,
     r.gate,
     r.mode
   ]);
 
   doc.autoTable({
-    head: [["Time", "Water Level (cm)", "State", "Gate", "Mode"]],
-    body: rows.length ? rows : [["No readings available", "-", "-", "-", "-"]],
+    head: [["Timestamp", "Water Distance", "Safety State", "Gate Position", "Mode"]],
+    body: rows.length ? rows : [["No readings recorded", "-", "-", "-", "-"]],
     startY: 76,
+    theme: "striped",
+    headStyles: {
+      fillColor: [37, 99, 235],
+      textColor: [255, 255, 255],
+      fontStyle: "bold"
+    },
     styles: {
       fontSize: 9,
-      cellPadding: 3
-    },
-    headStyles: {
-      fillColor: [37, 99, 235]
+      cellPadding: 4
     }
   });
 
-  doc.save("smart-dam-report.pdf");
-  showToast("safe", "PDF Downloaded", "Monitoring report PDF has been generated.");
+  doc.save("dam-safety-scada-report.pdf");
+  showToast("safe", "Report Generated", "PDF telemetry report downloaded successfully.");
 }
 
+/* --------------------------------------------------------------------------
+   HARDWARE & ACTUATOR SYNCHRONIZATION
+   -------------------------------------------------------------------------- */
 function updateDeviceUI() {
-  if (deviceConnected) {
-    deviceBadge.innerHTML = `<span class="badge-dot"></span> Device Online`;
-    deviceBadge.className = "badge online";
-    setText(infoConnection, "Online");
-  } else {
-    deviceBadge.innerHTML = `<span class="badge-dot"></span> Device Offline`;
-    deviceBadge.className = "badge offline";
-    setText(infoConnection, "Offline");
+  const text = deviceConnected ? "Device Online" : "Device Offline";
+  const badgeClass = deviceConnected ? "badge online" : "badge offline";
+  const miniClass = deviceConnected ? "badge-mini online" : "badge-mini offline";
+
+  if (deviceBadge) {
+    deviceBadge.innerHTML = `<span class="badge-dot"></span> <span class="badge-text">${text}</span>`;
+    deviceBadge.className = badgeClass;
+  }
+
+  if (mobileDeviceBadge) {
+    mobileDeviceBadge.innerHTML = `<span class="badge-dot"></span> <span class="badge-mini-text">${deviceConnected ? "Online" : "Offline"}</span>`;
+    mobileDeviceBadge.className = miniClass;
+  }
+
+  setText(infoConnection, deviceConnected ? "Online" : "Offline");
+  if (infoConnection) {
+    infoConnection.className = `info-val ${deviceConnected ? "val-safe" : "val-offline"}`;
   }
 
   if (previousDeviceStatus !== null && previousDeviceStatus !== deviceConnected) {
     showToast(
       deviceConnected ? "safe" : "danger",
-      deviceConnected ? "Device Connected" : "Device Offline",
+      deviceConnected ? "ESP8266 Connected" : "ESP8266 Disconnected",
       deviceConnected
-        ? "Embedded monitoring device is now online."
-        : "Live device connection lost. Monitoring updates may be interrupted."
+        ? "Wireless telemetry link established with embedded controller."
+        : "Heartbeat lost. Check ESP8266 WiFi power and serial link."
     );
   }
 
@@ -408,21 +628,27 @@ function updateDeviceUI() {
 
 function updateGateUI() {
   if (gateStatus === "OPEN") {
-    gateBadge.innerHTML = `<span class="badge-dot"></span> Gate Open`;
-    gateBadge.className = "badge open";
-    setText(gateText, "🚪 Gate: OPEN");
+    if (gateBadge) {
+      gateBadge.innerHTML = `<span class="badge-dot"></span> <span class="badge-text">Gate Open</span>`;
+      gateBadge.className = "badge open";
+    }
+    setText(gateText, "Gate: OPEN (Discharge)");
     setText(gateMainText, "OPEN");
     setText(infoGate, "OPEN");
   } else if (gateStatus === "CLOSED") {
-    gateBadge.innerHTML = `<span class="badge-dot"></span> Gate Closed`;
-    gateBadge.className = "badge closed";
-    setText(gateText, "🚪 Gate: CLOSED");
+    if (gateBadge) {
+      gateBadge.innerHTML = `<span class="badge-dot"></span> <span class="badge-text">Gate Closed</span>`;
+      gateBadge.className = "badge closed";
+    }
+    setText(gateText, "Gate: CLOSED (Holding)");
     setText(gateMainText, "CLOSED");
     setText(infoGate, "CLOSED");
   } else {
-    gateBadge.innerHTML = `<span class="badge-dot"></span> Gate Moving`;
-    gateBadge.className = "badge moving";
-    setText(gateText, "⚙ Gate: MOVING");
+    if (gateBadge) {
+      gateBadge.innerHTML = `<span class="badge-dot"></span> <span class="badge-text">Gate Moving</span>`;
+      gateBadge.className = "badge moving";
+    }
+    setText(gateText, "Gate: MOVING...");
     setText(gateMainText, "MOVING");
     setText(infoGate, "MOVING");
   }
@@ -431,17 +657,15 @@ function updateGateUI() {
 
   if (previousGateStatus && previousGateStatus !== gateStatus) {
     if (gateStatus === "OPEN") {
-      showToast("warning", "Gate Opened", "Spillway gate is open for controlled discharge.");
+      showToast("warning", "Spillway Gate Opened", "Sluice gate actuator engaged for reservoir discharge.");
     } else if (gateStatus === "CLOSED") {
-      showToast("safe", "Gate Closed", "Spillway gate has been closed.");
-    } else if (gateStatus === "MOVING") {
-      showToast("warning", "Gate Moving", "Gate mechanism is currently in motion.");
+      showToast("safe", "Spillway Gate Closed", "Gate is sealed in safe holding position.");
     }
   }
 
   previousGateStatus = gateStatus;
 
-  setText(modeText, "Mode: " + controlMode);
+  setText(modeText, `Mode: ${controlMode}`);
   setText(modeValue, controlMode);
   setText(heroModeText, controlMode);
   setText(infoMode, controlMode);
@@ -449,43 +673,89 @@ function updateGateUI() {
   removeClasses(heroModeText, ["safe-text", "alarm-text", "danger-text", "neutral-text"]);
 
   if (controlMode === "MANUAL") {
-    setText(modeText, "Mode: MANUAL OVERRIDE");
-    modeText.style.color = "#fecaca";
-    heroModeText.classList.add("danger-text");
-    modeNote.innerText = "⚠ Engineer emergency control active";
-    modeNote.classList.add("manual-warning");
+    heroModeText?.classList.add("danger-text");
+    if (modeNote) {
+      modeNote.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span>Manual Emergency Override Active</span>
+      `;
+      modeNote.className = "mode-note manual-warning";
+    }
   } else {
-    modeText.style.color = "";
-    heroModeText.classList.add("neutral-text");
-    modeNote.innerText = "Automatic gate control active";
-    modeNote.classList.remove("manual-warning");
+    heroModeText?.classList.add("neutral-text");
+    if (modeNote) {
+      modeNote.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span>Automatic supervisory control active</span>
+      `;
+      modeNote.className = "mode-note";
+    }
   }
 
   updateButtonState();
 }
 
+/* --------------------------------------------------------------------------
+   SUPERVISORY ACCESS & ACTUATOR COMMANDS
+   -------------------------------------------------------------------------- */
 function updateAdminUI() {
   if (isAdmin) {
-    controlPanel.classList.remove("hidden");
-    loggedOutPanel.classList.add("hidden");
+    controlPanel?.classList.remove("hidden");
+    loggedOutPanel?.classList.add("hidden");
+    if (adminIconBtn) {
+      adminIconBtn.innerHTML = `
+        <span class="btn-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="8.5" cy="7" r="4"></circle>
+            <line x1="18" y1="8" x2="23" y2="13"></line>
+            <line x1="23" y1="8" x2="18" y2="13"></line>
+          </svg>
+        </span>
+        <span class="btn-text">Logout (${sessionStorage.getItem("adminUser") || "Admin"})</span>
+      `;
+      adminIconBtn.onclick = logoutAdmin;
+    }
   } else {
-    controlPanel.classList.add("hidden");
-    loggedOutPanel.classList.remove("hidden");
+    controlPanel?.classList.add("hidden");
+    loggedOutPanel?.classList.remove("hidden");
+    if (adminIconBtn) {
+      adminIconBtn.innerHTML = `
+        <span class="btn-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </span>
+        <span class="btn-text">Engineer Login</span>
+      `;
+      adminIconBtn.onclick = showLoginModal;
+    }
   }
 
   updateButtonState();
 }
 
 function updateButtonState() {
+  if (!openBtn || !closeBtn || !autoBtn) return;
+
   if (!isAdmin || !deviceConnected) {
     openBtn.disabled = true;
     closeBtn.disabled = true;
     autoBtn.disabled = true;
 
     if (!isAdmin) {
-      controlMessage.innerText = "Admin login required for manual control";
+      setText(controlMessage, "Engineer authentication required to unlock actuator commands.");
     } else if (!deviceConnected) {
-      controlMessage.innerText = "Device offline - manual control unavailable";
+      setText(controlMessage, "Hardware telemetry link offline. Actuator commands locked.");
     }
     return;
   }
@@ -495,69 +765,68 @@ function updateButtonState() {
       openBtn.disabled = false;
       closeBtn.disabled = true;
       autoBtn.disabled = false;
-      controlMessage.innerText = "Manual mode active: gate is closed. Open gate or return to AUTO.";
+      setText(controlMessage, "Manual Mode Active: Gate is closed. Ready to OPEN or return to AUTO.");
     } else if (gateStatus === "OPEN") {
       openBtn.disabled = true;
       closeBtn.disabled = false;
       autoBtn.disabled = true;
-      controlMessage.innerText = "Manual mode active: gate is open. Close the gate before AUTO.";
+      setText(controlMessage, "Manual Mode Active: Gate is open. CLOSE gate prior to AUTO return.");
     } else {
       openBtn.disabled = true;
       closeBtn.disabled = true;
       autoBtn.disabled = true;
-      controlMessage.innerText = "Gate is moving. Controls are temporarily locked.";
+      setText(controlMessage, "Gate servo in motion. Actuators locked.");
     }
     return;
   }
 
+  // AUTO Mode
   if (gateStatus === "CLOSED") {
     openBtn.disabled = false;
     closeBtn.disabled = true;
     autoBtn.disabled = true;
-    controlMessage.innerText = "AUTO mode: gate is closed. OPEN command is available.";
+    setText(controlMessage, "AUTO Mode: Gate is holding water. Manual OPEN command ready.");
   } else if (gateStatus === "OPEN") {
     openBtn.disabled = true;
     closeBtn.disabled = false;
     autoBtn.disabled = true;
-    controlMessage.innerText = "AUTO mode: gate is open. CLOSE command is available.";
+    setText(controlMessage, "AUTO Mode: Gate is open. Manual CLOSE command ready.");
   } else {
     openBtn.disabled = true;
     closeBtn.disabled = true;
     autoBtn.disabled = true;
-    controlMessage.innerText = "Gate is moving. Controls are temporarily disabled.";
+    setText(controlMessage, "Actuator busy.");
   }
 }
 
+/* --------------------------------------------------------------------------
+   SOCKET.IO EVENT RECEIVERS
+   -------------------------------------------------------------------------- */
 socket.on("update", (data) => {
   const level = Number(data.level || 0);
   const state = data.state || "SAFE";
 
-  setText(levelEl, "Water Level: " + level + " cm");
-  setText(levelValue, level + " cm");
+  setText(levelEl, `Water Level: ${level} cm`);
+  setText(levelValue, `${level} cm`);
 
   gateStatus = data.gate || "CLOSED";
   controlMode = data.mode || "AUTO";
 
   setText(stateValue, state);
 
-  if (state === "SAFE") {
-    setText(stateEl, "🟢 Status: SAFE");
-    stateEl.style.color = "#86efac";
-  } else if (state === "ALARM") {
-    setText(stateEl, "🟠 Status: ALARM");
-    stateEl.style.color = "#fdba74";
-  } else {
-    setText(stateEl, "🔴 Status: DANGER");
-    stateEl.style.color = "#fca5a5";
+  if (stateEl) {
+    setText(stateEl, `Status: ${state}`);
+    stateEl.style.color = state === "SAFE" ? "#34d399" : state === "ALARM" ? "#fbbf24" : "#f87171";
   }
 
+  // Check state transitions for toast notifications
   if (previousRiskState && previousRiskState !== state) {
     if (state === "ALARM") {
-      showToast("warning", "Warning", "Reservoir conditions have moved to ALARM level.");
+      showToast("warning", "Hazard Warning: ALARM", "Reservoir elevation has reached preventive warning stage.");
     } else if (state === "DANGER") {
-      showToast("danger", "Danger", "Critical flood risk detected. Immediate attention required.");
+      showToast("danger", "CRITICAL OVERFLOW HAZARD", "Water levels exceeding safety threshold! Immediate gate discharge in effect.");
     } else if (state === "SAFE") {
-      showToast("safe", "Safe", "System has returned to safe operating condition.");
+      showToast("safe", "System Safe", "Reservoir water levels restored to normal baseline.");
     }
   }
   previousRiskState = state;
@@ -567,31 +836,39 @@ socket.on("update", (data) => {
   updatePredictionUI(data.prediction, level, state);
   updateGauge(level);
 
+  if (bannerLastUpdated) {
+    bannerLastUpdated.innerText = `Sync: ${new Date().toLocaleTimeString()}`;
+  }
+
   if (Array.isArray(data.history)) {
     readingsHistory.length = 0;
     data.history.forEach((item) => readingsHistory.push(item));
     renderReadingsTable();
   }
 
-  const now = new Date().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
-  });
+  // Update chart
+  if (levelChart) {
+    const timestamp = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    });
 
-  levelChart.data.labels.push(now);
-  levelChart.data.datasets[0].data.push(level);
+    levelChart.data.labels.push(timestamp);
+    levelChart.data.datasets[0].data.push(level);
 
-  if (levelChart.data.labels.length > 20) {
-    levelChart.data.labels.shift();
-    levelChart.data.datasets[0].data.shift();
+    if (levelChart.data.labels.length > 20) {
+      levelChart.data.labels.shift();
+      levelChart.data.datasets[0].data.shift();
+    }
+
+    levelChart.update();
   }
-
-  levelChart.update();
 });
 
 socket.on("device-status", (data) => {
-  deviceConnected = data.connected;
+  deviceConnected = Boolean(data.connected);
   updateDeviceUI();
 });
 
@@ -600,26 +877,32 @@ socket.on("history-cleared", () => {
   renderReadingsTable();
 });
 
+/* --------------------------------------------------------------------------
+   ENGINEER LOGIN MODAL & COMMANDS
+   -------------------------------------------------------------------------- */
 function showLoginModal() {
+  if (!loginModal) return;
   loginModal.classList.remove("hidden");
-  loginMessage.innerText = "";
-  adminPasswordInput.value = "";
-  adminPasswordInput.focus();
+  if (loginMessage) loginMessage.innerText = "";
+  if (adminPasswordInput) {
+    adminPasswordInput.value = "";
+    setTimeout(() => adminPasswordInput.focus(), 100);
+  }
 }
 
 function hideLoginModal() {
+  if (!loginModal) return;
   loginModal.classList.add("hidden");
 }
 
 async function loginAdmin() {
+  if (!adminPasswordInput) return;
   const password = adminPasswordInput.value.trim();
 
   try {
     const response = await fetch("/api/admin/login", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password })
     });
 
@@ -628,36 +911,38 @@ async function loginAdmin() {
     if (result.success) {
       isAdmin = true;
       sessionStorage.setItem("isAdmin", "true");
+      sessionStorage.setItem("adminUser", "Engineer");
       updateAdminUI();
       hideLoginModal();
-      showToast("safe", "Login Successful", "Engineer access granted.");
+      showToast("safe", "Access Granted", "Engineer supervisory control enabled.");
     } else {
-      loginMessage.innerText = "Wrong password";
-      showToast("danger", "Login Failed", "Incorrect engineer password.");
+      if (loginMessage) loginMessage.innerText = "Incorrect security authorization password.";
+      showToast("danger", "Access Denied", "Invalid engineer credentials.");
     }
   } catch (error) {
-    loginMessage.innerText = "Login failed";
-    showToast("danger", "Login Error", "Unable to complete authentication.");
+    if (loginMessage) loginMessage.innerText = "Authorization server error.";
+    showToast("danger", "Connection Error", "Failed to communicate with authentication service.");
   }
 }
 
 function logoutAdmin() {
   isAdmin = false;
   sessionStorage.removeItem("isAdmin");
+  sessionStorage.removeItem("adminUser");
   updateAdminUI();
-  showToast("warning", "Logged Out", "Engineer manual control session ended.");
+  showToast("warning", "Session Terminated", "Engineer supervisory controls returned to standby.");
 }
 
 function openGate() {
   if (!isAdmin || !deviceConnected || gateStatus !== "CLOSED") return;
   socket.emit("manual-control", "OPEN");
-  showToast("warning", "Open Command Sent", "Opening command has been sent to gate controller.");
+  showToast("warning", "Open Command Queued", "Command transmitted to ESP8266 actuator controller.");
 }
 
 function closeGate() {
   if (!isAdmin || !deviceConnected || gateStatus !== "OPEN") return;
   socket.emit("manual-control", "CLOSE");
-  showToast("warning", "Close Command Sent", "Closing command has been sent to gate controller.");
+  showToast("warning", "Close Command Queued", "Command transmitted to ESP8266 actuator controller.");
 }
 
 function returnToAuto() {
@@ -666,15 +951,27 @@ function returnToAuto() {
   if (gateStatus !== "CLOSED") return;
 
   socket.emit("manual-control", "AUTO");
-  showToast("safe", "Auto Mode Enabled", "System returned to automatic control mode.");
+  showToast("safe", "Automatic Control Restored", "Supervisory logic returned to automatic gate actuation.");
 }
 
+// Enter Key on password field
 adminPasswordInput?.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     loginAdmin();
   }
 });
 
+// Escape key to close modal
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    hideLoginModal();
+    if (window.innerWidth <= 1080) closeSidebar();
+  }
+});
+
+/* --------------------------------------------------------------------------
+   LIFECYCLE INITIALIZATION
+   -------------------------------------------------------------------------- */
 window.addEventListener("load", () => {
   isAdmin = sessionStorage.getItem("isAdmin") === "true";
   hideLoginModal();

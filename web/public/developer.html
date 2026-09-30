@@ -2,62 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>Developer Profile | Smart Dam Safety System</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+
   <style>
     :root {
-      --bg: #07101c;
-      --bg2: #0b1626;
-      --panel: rgba(12, 22, 37, 0.85);
-      --panel2: rgba(18, 30, 48, 0.9);
-      --border: rgba(148, 163, 184, 0.16);
-      --text: #e6eefc;
-      --muted: #93a7c3;
-      --white: #ffffff;
+      --bg-primary: #060d17;
+      --panel-bg: rgba(13, 25, 44, 0.84);
+      --panel-card: rgba(16, 31, 54, 0.88);
+      --border-subtle: rgba(148, 163, 184, 0.14);
+      --border-medium: rgba(148, 163, 184, 0.24);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
       --blue: #3b82f6;
-      --blue2: #2563eb;
-      --green: #22c55e;
-      --shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
-      --radius-xl: 24px;
-      --radius-lg: 18px;
-      --radius-md: 14px;
-      --transition: 0.28s ease;
+      --blue-hover: #2563eb;
+      --safe: #10b981;
+      --safe-bg: rgba(16, 185, 129, 0.12);
+      --safe-border: rgba(16, 185, 129, 0.28);
+      --shadow-lg: 0 24px 50px rgba(0, 0, 0, 0.42);
+      --radius-lg: 16px;
+      --radius-xl: 22px;
+      --radius-full: 9999px;
+      --transition: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    * {
+    *, *::before, *::after {
       box-sizing: border-box;
-    }
-
-    html,
-    body {
-      height: 100%;
-    }
-
-    body {
       margin: 0;
+      padding: 0;
+    }
+
+    body {
       min-height: 100vh;
-      font-family: "Inter", "Segoe UI", Arial, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(circle at left top, rgba(59,130,246,0.18), transparent 24%),
-        radial-gradient(circle at right top, rgba(34,197,94,0.10), transparent 22%),
-        linear-gradient(180deg, #06101b 0%, #091320 40%, #07101c 100%);
-      
-      padding: 10px 14px;
+      font-family: "Inter", -apple-system, sans-serif;
+      color: var(--text-main);
+      background-color: var(--bg-primary);
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 5% -20%, rgba(59, 130, 246, 0.18), transparent),
+        radial-gradient(ellipse 60% 40% at 95% 10%, rgba(16, 185, 129, 0.1), transparent),
+        linear-gradient(180deg, #050b14 0%, #081220 50%, #060d17 100%);
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 24px 16px;
     }
 
     .page-shell {
       width: 100%;
-      max-width: 1080px;
+      max-width: 1000px;
       margin: 0 auto;
     }
 
     .profile-card {
-      background: rgba(12, 22, 37, 0.82);
-      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--radius-xl);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       overflow: hidden;
     }
 
@@ -65,55 +74,54 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      padding: 14px 18px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      background: rgba(11, 21, 35, 0.72);
+      gap: 16px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(10, 20, 36, 0.7);
     }
 
     .eyebrow {
-      margin: 0 0 6px;
-      color: #7fb7ff;
+      font-size: 0.72rem;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      font-size: 12px;
-      font-weight: 700;
+      color: #60a5fa;
+      margin-bottom: 4px;
     }
 
     .profile-topbar h1 {
-      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 800;
       color: white;
-      font-size: 1.9rem;
-      line-height: 1.15;
     }
 
     .back-btn {
       text-decoration: none;
       min-height: 42px;
-      padding: 11px 16px;
-      border-radius: 14px;
+      padding: 10px 18px;
+      border-radius: 12px;
       color: white;
       font-weight: 700;
-      background: linear-gradient(135deg, var(--blue), var(--blue2));
+      font-size: 0.88rem;
+      background: linear-gradient(135deg, var(--blue), var(--blue-hover));
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
       transition: var(--transition);
       white-space: nowrap;
-      box-shadow:
-        0 14px 28px rgba(37, 99, 235, 0.28),
-        inset 0 1px 0 rgba(255,255,255,0.16);
     }
 
     .back-btn:hover {
       transform: translateY(-2px);
+      filter: brightness(1.08);
     }
 
     .profile-body {
       display: grid;
-      grid-template-columns: 270px 1fr;
-      gap: 14px;
-      padding: 14px;
+      grid-template-columns: 280px 1fr;
+      gap: 20px;
+      padding: 24px;
       align-items: start;
     }
 
@@ -121,14 +129,19 @@
     .profile-right {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
     }
 
     .glass-panel {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 18px;
-      padding: 14px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      transition: border-color var(--transition);
+    }
+
+    .glass-panel:hover {
+      border-color: var(--border-medium);
     }
 
     .profile-photo-wrap {
@@ -136,16 +149,14 @@
     }
 
     .profile-photo {
-      width: 100%;
-      max-width: 150px;
-      aspect-ratio: 1 / 1;
-      margin: 0 auto 10px;
-      border-radius: 20px;
+      width: 140px;
+      height: 140px;
+      margin: 0 auto 14px;
+      border-radius: 24px;
       overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.1);
-      background:
-        linear-gradient(135deg, rgba(59,130,246,0.18), rgba(34,197,94,0.10));
-      box-shadow: 0 16px 28px rgba(0,0,0,0.24);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .profile-photo img {
@@ -156,57 +167,55 @@
     }
 
     .profile-name {
-      margin: 0 0 4px;
-      font-size: 1rem;
-      color: white;
+      font-size: 1.25rem;
       font-weight: 800;
-      line-height: 1.2;
+      color: white;
+      margin-bottom: 4px;
     }
 
     .profile-role {
-      margin: 0;
       color: #93c5fd;
-      font-size: 12px;
+      font-size: 0.8rem;
       font-weight: 700;
-      letter-spacing: 0.06em;
       text-transform: uppercase;
-      line-height: 1.4;
+      letter-spacing: 0.06em;
     }
 
     .availability-badge {
-      margin-top: 10px;
+      margin-top: 14px;
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
       font-weight: 700;
-      color: #86efac;
-      background: rgba(34,197,94,0.14);
-      border: 1px solid rgba(34,197,94,0.2);
+      color: #34d399;
+      background: var(--safe-bg);
+      border: 1px solid var(--safe-border);
     }
 
     .badge-dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: currentColor;
-      box-shadow: 0 0 12px currentColor;
+      box-shadow: 0 0 10px currentColor;
     }
 
     .section-title {
-      margin: 0 0 10px;
-      color: white;
       font-size: 0.95rem;
       font-weight: 800;
+      color: white;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .about-text {
-      margin: 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.6;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.65;
     }
 
     .info-list {
@@ -219,128 +228,97 @@
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid var(--border-subtle);
     }
 
     .info-item span {
-      color: var(--muted);
-      font-size: 13px;
+      color: var(--text-muted);
+      font-size: 0.82rem;
     }
 
     .info-item strong {
       color: white;
+      font-size: 0.85rem;
       text-align: right;
-      font-size: 14px;
-      line-height: 1.4;
     }
 
     .skills {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
     }
 
     .skill-chip {
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      color: #dbeafe;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.07);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
     }
 
     .contact-actions {
       display: flex;
-      flex-wrap: wrap;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
     .action-btn {
-      min-height: 40px;
-      padding: 10px 16px;
-      border-radius: 14px;
-      font-size: 14px;
+      min-height: 42px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 0.88rem;
       color: white;
       font-weight: 700;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
       transition: var(--transition);
     }
 
     .linkedin-btn {
-      background: linear-gradient(135deg, #0a66c2, #004182);
-      box-shadow:
-        0 14px 26px rgba(10, 102, 194, 0.25),
-        inset 0 1px 0 rgba(255,255,255,0.12);
+      background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
+      box-shadow: 0 4px 14px rgba(10, 102, 194, 0.3);
     }
 
     .secondary-btn {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: #dbeafe;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: #cbd5e1;
     }
 
     .action-btn:hover {
       transform: translateY(-2px);
+      filter: brightness(1.1);
     }
 
-    @media (max-width: 980px) {
-      body {
-        padding: 12px;
-      }
-
+    @media (max-width: 860px) {
       .profile-body {
         grid-template-columns: 1fr;
       }
-
       .profile-topbar {
         flex-direction: column;
         align-items: stretch;
       }
-
       .back-btn {
         width: 100%;
+        justify-content: center;
       }
-
       .profile-photo {
-        max-width: 220px;
+        width: 160px;
+        height: 160px;
       }
-    }
-
-    @media (max-width: 640px) {
-      .profile-topbar {
-        padding: 16px;
-      }
-
-      .profile-body {
-        padding: 16px;
-        gap: 14px;
-      }
-
-      .glass-panel {
-        padding: 16px;
-      }
-
       .contact-actions {
         flex-direction: column;
       }
-
       .action-btn {
         width: 100%;
-      }
-
-      .info-item {
-        flex-direction: column;
-      }
-
-      .info-item strong {
-        text-align: left;
       }
     }
   </style>
@@ -348,85 +326,102 @@
 <body>
   <div class="page-shell">
     <section class="profile-card">
-      <div class="profile-topbar">
+      <header class="profile-topbar">
         <div>
-          <p class="eyebrow">Developer Profile</p>
-          <h1>Web Development Details</h1>
+          <p class="eyebrow">ENGINEERING TEAM</p>
+          <h1>Developer Profile</h1>
         </div>
-        <a href="index.html" class="back-btn">← Back to Dashboard</a>
-      </div>
+        <a href="index.html" class="back-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span>Back to SCADA Dashboard</span>
+        </a>
+      </header>
 
       <div class="profile-body">
+        <!-- LEFT COLUMN: PHOTO & QUICK INFO -->
         <div class="profile-left">
           <div class="glass-panel profile-photo-wrap">
             <div class="profile-photo">
-              <img src="img/jaanu.jpeg" alt="Developer Photo" />
+              <img src="img/jaanu.jpeg" alt="VARNAJA U. Profile Photo" />
             </div>
 
             <h2 class="profile-name">VARNAJA U.</h2>
-            <p class="profile-role">Full Stack Web Developer</p>
+            <p class="profile-role">Full Stack SCADA Developer</p>
 
             <div class="availability-badge">
               <span class="badge-dot"></span>
-              Core Project Contributor
+              Core System Contributor
             </div>
           </div>
 
           <div class="glass-panel">
-            <h3 class="section-title">Quick Information</h3>
+            <h3 class="section-title">Project Metadata</h3>
             <div class="info-list">
               <div class="info-item">
                 <span>Role</span>
-                <strong>Frontend & Backend Developer</strong>
+                <strong>Web UI & SCADA Backend</strong>
               </div>
               <div class="info-item">
                 <span>Project</span>
                 <strong>Smart Dam Safety System</strong>
               </div>
               <div class="info-item">
-                <span>Contribution</span>
-                <strong>Complete Web System Development</strong>
+                <span>Department</span>
+                <strong>Computer Engineering</strong>
+              </div>
+              <div class="info-item">
+                <span>Phase</span>
+                <strong>Final Year (Semester 7)</strong>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- RIGHT COLUMN: ABOUT & SKILLS -->
         <div class="profile-right">
           <div class="glass-panel">
-            <h3 class="section-title">About Me</h3>
+            <h3 class="section-title">Engineering Overview</h3>
             <p class="about-text">
-              I am Varnaja Uthayaraj, a Computer Engineering final year student
-              who thrives on creative thinking, problem-solving, and is
-              interested in systems security. With strong logical skills, I aim
-              to contribute to innovative and efficient engineering solutions.
+              Final-year Computer Engineering student dedicated to high-reliability systems engineering, 
+              real-time IoT data visualization, and automated industrial control systems. Focused on building 
+              resilient, accessible, and high-performance SCADA interfaces that bridge physical embedded hardware 
+              with cloud and web platforms.
             </p>
           </div>
 
           <div class="glass-panel">
-            <h3 class="section-title">Key Focus Areas</h3>
+            <h3 class="section-title">Technical Competencies</h3>
             <div class="skills">
-              <span class="skill-chip">Frontend Development</span>
-              <span class="skill-chip">Backend Development</span>
-              <span class="skill-chip">Web System Design</span>
-              <span class="skill-chip">Responsive Interface</span>
-              <span class="skill-chip">Problem Solving</span>
-              <span class="skill-chip">Systems Security</span>
+              <span class="skill-chip">Real-Time WebSockets</span>
+              <span class="skill-chip">Node.js & Express</span>
+              <span class="skill-chip">SCADA Dashboard Design</span>
+              <span class="skill-chip">Chart.js Telemetry</span>
+              <span class="skill-chip">Embedded IoT Integration</span>
+              <span class="skill-chip">Responsive Industrial UI</span>
+              <span class="skill-chip">Systems Security & Auth</span>
+              <span class="skill-chip">REST API Design</span>
             </div>
           </div>
 
           <div class="glass-panel">
-            <h3 class="section-title">Professional Contact</h3>
+            <h3 class="section-title">Connect & Collaborate</h3>
             <div class="contact-actions">
               <a
                 href="https://www.linkedin.com/in/varnaja01"
                 target="_blank"
+                rel="noopener noreferrer"
                 class="action-btn linkedin-btn"
               >
-                View LinkedIn
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                </svg>
+                <span>Connect on LinkedIn</span>
               </a>
 
               <a href="index.html" class="action-btn secondary-btn">
-                Return to Dashboard
+                <span>Return to Dashboard</span>
               </a>
             </div>
           </div>

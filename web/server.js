@@ -2,20 +2,17 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 
-const path = require("path");
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
-const DEVICE_TIMEOUT = 3000;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
-const MAX_HISTORY = 20;
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static("public"));
+
+const DEVICE_TIMEOUT = 3000;
+const ADMIN_PASSWORD = "admin123"; // change this
+const MAX_HISTORY = 20;
 
 let latestData = {
     level: 0,
@@ -240,6 +237,6 @@ setInterval(() => {
     io.emit("device-status", { connected: isDeviceConnected() });
 }, 1000);
 
-server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+server.listen(3000, () => {
+    console.log("Server running on http://localhost:3000");
 });

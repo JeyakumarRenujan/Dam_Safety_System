@@ -76,3 +76,4 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **POST** `/api/admin/login` - Authenticate admin credentials
 - **GET** `/api/history` - Retrieve historical water level readings
 - **DELETE** `/api/history` - Clear recorded history
+
