@@ -2,17 +2,20 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 
+const path = require("path");
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+const PORT = process.env.PORT || 3000;
+const DEVICE_TIMEOUT = 3000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+const MAX_HISTORY = 20;
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
-
-const DEVICE_TIMEOUT = 3000;
-const ADMIN_PASSWORD = "admin123"; // change this
-const MAX_HISTORY = 20;
+app.use(express.static(path.join(__dirname, "public")));
 
 let latestData = {
     level: 0,
@@ -112,6 +115,16 @@ app.post("/api/admin/login", (req, res) => {
     return res.status(401).json({
         success: false,
         message: "Wrong password"
+    });
+});
+
+/* ---------- Get full real-time status (for dashboard polling & serverless) ---------- */
+app.get("/api/status", (req, res) => {
+    res.json({
+        success: true,
+        connected: isDeviceConnected(),
+        ...latestData,
+        history: readingsHistory
     });
 });
 
@@ -233,10 +246,14 @@ io.on("connection", (socket) => {
     });
 });
 
-setInterval(() => {
-    io.emit("device-status", { connected: isDeviceConnected() });
-}, 1000);
+if (!process.env.VERCEL) {
+    setInterval(() => {
+        io.emit("device-status", { connected: isDeviceConnected() });
+    }, 1000);
 
-server.listen(3000, () => {
-    console.log("Server running on http://localhost:3000");
-});
+    server.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

@@ -800,9 +800,10 @@ function updateButtonState() {
 }
 
 /* --------------------------------------------------------------------------
-   SOCKET.IO EVENT RECEIVERS
+   TELEMETRY UPDATE PROCESSOR & POLLING FALLBACK (VERCEL / SERVERLESS COMPATIBLE)
    -------------------------------------------------------------------------- */
-socket.on("update", (data) => {
+function applyTelemetryUpdate(data) {
+  if (!data) return;
   const level = Number(data.level || 0);
   const state = data.state || "SAFE";
 
@@ -865,12 +866,36 @@ socket.on("update", (data) => {
 
     levelChart.update();
   }
-});
+}
+
+// HTTP Polling fallback for serverless deployments (Vercel)
+async function pollStatusFallback() {
+  try {
+    const res = await fetch("/api/status");
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.success) {
+      if (typeof data.connected === "boolean") {
+        deviceConnected = data.connected;
+        updateDeviceUI();
+      }
+      applyTelemetryUpdate(data);
+    }
+  } catch (err) {
+    // Ignore network polling drops
+  }
+}
+
+// Socket.IO event listeners
+socket.on("update", applyTelemetryUpdate);
 
 socket.on("device-status", (data) => {
   deviceConnected = Boolean(data.connected);
   updateDeviceUI();
 });
+
+// Periodic fallback polling (every 3 seconds) ensuring live updates on Vercel
+setInterval(pollStatusFallback, 3000);
 
 socket.on("history-cleared", () => {
   readingsHistory.length = 0;
