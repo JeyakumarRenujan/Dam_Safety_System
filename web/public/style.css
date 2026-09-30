@@ -1178,6 +1178,25 @@ html[data-theme="light"] .chip.live-chip {
   background: rgba(255, 255, 255, 0.025);
 }
 
+html[data-theme="light"] .table-wrap {
+  background: #ffffff;
+  border-color: var(--border-subtle);
+}
+
+html[data-theme="light"] .readings-table thead th {
+  background: #f1f5f9;
+  color: var(--blue-primary);
+  border-bottom: 1px solid var(--border-medium);
+}
+
+html[data-theme="light"] .readings-table tbody td {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .readings-table tbody tr:hover td {
+  background: rgba(15, 23, 42, 0.03);
+}
+
 .reading-safe {
   color: #34d399 !important;
   font-weight: 700;
@@ -1485,10 +1504,30 @@ html[data-theme="light"] .water-channel {
   margin-bottom: 18px;
 }
 
+html[data-theme="light"] .mode-note {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.22);
+  color: #1d4ed8;
+}
+
+html[data-theme="light"] .mode-note svg {
+  stroke: #1d4ed8;
+}
+
 .mode-note.manual-warning {
   background: var(--danger-bg);
   border-color: var(--danger-border);
   color: #fca5a5;
+}
+
+html[data-theme="light"] .mode-note.manual-warning {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #b91c1c;
+}
+
+html[data-theme="light"] .mode-note.manual-warning svg {
+  stroke: #b91c1c;
 }
 
 .control-panel {
@@ -1506,7 +1545,7 @@ html[data-theme="light"] .water-channel {
 
 .admin-panel-header h4 {
   font-size: 0.95rem;
-  color: var(--white);
+  color: var(--text-heading);
   font-weight: 700;
 }
 
@@ -1523,6 +1562,22 @@ html[data-theme="light"] .water-channel {
   gap: 10px;
 }
 
+.control-panel .button-group,
+.control-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+
+.control-panel .button-group #autoBtn,
+.control-panel .button-group .auto-span-btn,
+.control-buttons #autoBtn,
+.control-buttons .auto-span-btn {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
 button {
   border: none;
   cursor: pointer;
@@ -1537,7 +1592,6 @@ button {
   min-height: 44px;
   padding: 10px 14px;
   border-radius: var(--radius-md);
-  color: var(--white);
   font-weight: 700;
   font-size: 0.85rem;
   display: inline-flex;
@@ -1545,6 +1599,20 @@ button {
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+.primary-btn,
+.success-btn,
+.danger-btn {
+  color: #ffffff !important;
+}
+
+.primary-btn svg,
+.success-btn svg,
+.danger-btn svg {
+  stroke: #ffffff !important;
 }
 
 .btn-sm {
@@ -1567,13 +1635,16 @@ button {
 .danger-btn {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
-  color: #ffffff;
 }
 
 .secondary-btn {
   background: var(--card-glass);
   border: 1px solid var(--border-medium);
-  color: var(--text-main);
+  color: var(--text-heading) !important;
+}
+
+.secondary-btn svg {
+  stroke: currentColor;
 }
 
 .secondary-btn:hover {
@@ -2030,12 +2101,8 @@ input:focus {
     gap: 12px;
   }
 
-  .button-group {
+  .button-group:not(.control-buttons) {
     grid-template-columns: 1fr;
-  }
-
-  .admin-panel-header {
-    flex-direction: column;
   }
 
   .table-actions {
@@ -2131,5 +2198,23 @@ input:focus {
 
   .modal-content {
     padding: 20px 16px;
+  }
+
+  .control-panel .button-group,
+  .control-buttons {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .control-panel .button-group #autoBtn,
+  .control-panel .button-group .auto-span-btn,
+  .control-buttons #autoBtn,
+  .control-buttons .auto-span-btn {
+    grid-column: auto;
+  }
+
+  .admin-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
