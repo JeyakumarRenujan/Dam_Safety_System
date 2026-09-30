@@ -3,7 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <meta name="color-scheme" content="dark light" />
   <title>Developer Profile | Smart Dam Safety System</title>
+
+  <!-- Prevent Theme FOUC -->
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem("dam_safety_theme");
+        var theme = savedTheme ? savedTheme : (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) {}
+    })();
+  </script>
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -11,15 +23,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 
   <style>
-    :root {
+    :root,
+    html[data-theme="dark"] {
+      color-scheme: dark;
       --bg-primary: #060d17;
-      --panel-bg: rgba(13, 25, 44, 0.84);
+      --panel-bg: rgba(13, 25, 44, 0.88);
       --panel-card: rgba(16, 31, 54, 0.88);
       --border-subtle: rgba(148, 163, 184, 0.14);
       --border-medium: rgba(148, 163, 184, 0.24);
+      --border-focus: rgba(59, 130, 246, 0.6);
+      --text-heading: #ffffff;
       --text-main: #f1f5f9;
       --text-muted: #94a3b8;
       --text-subtle: #64748b;
+      --glass-panel-bg: rgba(255, 255, 255, 0.025);
+      --glass-item-bg: rgba(255, 255, 255, 0.025);
+      --chip-bg: rgba(255, 255, 255, 0.04);
+      --topbar-bg: rgba(10, 20, 36, 0.7);
       --blue: #3b82f6;
       --blue-hover: #2563eb;
       --safe: #10b981;
@@ -30,6 +50,30 @@
       --radius-xl: 22px;
       --radius-full: 9999px;
       --transition: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg-primary: #f0f4f9;
+      --panel-bg: rgba(255, 255, 255, 0.95);
+      --panel-card: #ffffff;
+      --border-subtle: rgba(15, 23, 42, 0.09);
+      --border-medium: rgba(15, 23, 42, 0.16);
+      --border-focus: rgba(37, 99, 235, 0.6);
+      --text-heading: #0f172a;
+      --text-main: #1e293b;
+      --text-muted: #475569;
+      --text-subtle: #64748b;
+      --glass-panel-bg: #f8fafc;
+      --glass-item-bg: #f1f5f9;
+      --chip-bg: #e2e8f0;
+      --topbar-bg: #f8fafc;
+      --blue: #2563eb;
+      --blue-hover: #1d4ed8;
+      --safe: #059669;
+      --safe-bg: rgba(16, 185, 129, 0.1);
+      --safe-border: rgba(16, 185, 129, 0.25);
+      --shadow-lg: 0 20px 45px rgba(15, 23, 42, 0.1);
     }
 
     *, *::before, *::after {
@@ -52,6 +96,14 @@
       flex-direction: column;
       justify-content: center;
       padding: 24px 16px;
+      transition: background-color var(--transition), color var(--transition);
+    }
+
+    html[data-theme="light"] body {
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 5% -20%, rgba(59, 130, 246, 0.08), transparent),
+        radial-gradient(ellipse 60% 40% at 95% 10%, rgba(16, 185, 129, 0.05), transparent),
+        linear-gradient(180deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
     }
 
     .page-shell {
@@ -77,7 +129,9 @@
       gap: 16px;
       padding: 20px 24px;
       border-bottom: 1px solid var(--border-subtle);
-      background: rgba(10, 20, 36, 0.7);
+      background: var(--topbar-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
 
     .eyebrow {
@@ -85,14 +139,92 @@
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      color: #60a5fa;
+      color: #3b82f6;
       margin-bottom: 4px;
     }
 
     .profile-topbar h1 {
       font-size: 1.6rem;
       font-weight: 800;
-      color: white;
+      color: var(--text-heading);
+    }
+
+    .profile-topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* THEME TOGGLE PILL */
+    .theme-toggle-pill {
+      min-height: 42px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      background: var(--glass-panel-bg);
+      border: 1px solid var(--border-medium);
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 700;
+      transition: var(--transition);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .theme-toggle-pill:hover {
+      border-color: var(--border-focus);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .theme-pill-track {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(59, 130, 246, 0.16);
+      display: grid;
+      place-items: center;
+      color: #60a5fa;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    html[data-theme="light"] .theme-pill-track {
+      background: #fef08a;
+      color: #b45309;
+    }
+
+    .theme-icon.sun,
+    .theme-icon.moon {
+      position: absolute;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+    }
+
+    /* In dark mode, sun is shown */
+    html[data-theme="dark"] .theme-icon.sun,
+    :root:not([data-theme="light"]) .theme-icon.sun {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+    html[data-theme="dark"] .theme-icon.moon,
+    :root:not([data-theme="light"]) .theme-icon.moon {
+      opacity: 0;
+      transform: scale(0.5) rotate(90deg);
+      pointer-events: none;
+    }
+
+    /* In light mode, moon is shown */
+    html[data-theme="light"] .theme-icon.sun {
+      opacity: 0;
+      transform: scale(0.5) rotate(-90deg);
+      pointer-events: none;
+    }
+    html[data-theme="light"] .theme-icon.moon {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
     }
 
     .back-btn {
@@ -133,11 +265,11 @@
     }
 
     .glass-panel {
-      background: rgba(255, 255, 255, 0.025);
+      background: var(--glass-panel-bg);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
       padding: 20px;
-      transition: border-color var(--transition);
+      transition: border-color var(--transition), box-shadow var(--transition);
     }
 
     .glass-panel:hover {
@@ -154,9 +286,9 @@
       margin: 0 auto 14px;
       border-radius: 24px;
       overflow: hidden;
-      border: 2px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
-      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid var(--border-medium);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+      background: var(--glass-item-bg);
     }
 
     .profile-photo img {
@@ -169,12 +301,12 @@
     .profile-name {
       font-size: 1.25rem;
       font-weight: 800;
-      color: white;
+      color: var(--text-heading);
       margin-bottom: 4px;
     }
 
     .profile-role {
-      color: #93c5fd;
+      color: #3b82f6;
       font-size: 0.8rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -190,7 +322,7 @@
       border-radius: var(--radius-full);
       font-size: 0.78rem;
       font-weight: 700;
-      color: #34d399;
+      color: var(--safe);
       background: var(--safe-bg);
       border: 1px solid var(--safe-border);
     }
@@ -206,7 +338,7 @@
     .section-title {
       font-size: 0.95rem;
       font-weight: 800;
-      color: white;
+      color: var(--text-heading);
       margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -230,7 +362,7 @@
       gap: 12px;
       padding: 10px 14px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.025);
+      background: var(--glass-item-bg);
       border: 1px solid var(--border-subtle);
     }
 
@@ -240,7 +372,7 @@
     }
 
     .info-item strong {
-      color: white;
+      color: var(--text-heading);
       font-size: 0.85rem;
       text-align: right;
     }
@@ -256,8 +388,8 @@
       border-radius: var(--radius-full);
       font-size: 0.78rem;
       font-weight: 600;
-      color: #cbd5e1;
-      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      background: var(--chip-bg);
       border: 1px solid var(--border-subtle);
     }
 
@@ -288,9 +420,9 @@
     }
 
     .secondary-btn {
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--glass-item-bg);
       border: 1px solid var(--border-subtle);
-      color: #cbd5e1;
+      color: var(--text-main);
     }
 
     .action-btn:hover {
@@ -306,8 +438,13 @@
         flex-direction: column;
         align-items: stretch;
       }
-      .back-btn {
+      .profile-topbar-actions {
         width: 100%;
+        display: flex;
+        gap: 10px;
+      }
+      .profile-topbar-actions .back-btn {
+        flex: 1;
         justify-content: center;
       }
       .profile-photo {
@@ -331,12 +468,35 @@
           <p class="eyebrow">ENGINEERING TEAM</p>
           <h1>Developer Profile</h1>
         </div>
-        <a href="index.html" class="back-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          <span>Back to SCADA Dashboard</span>
-        </a>
+
+        <div class="profile-topbar-actions">
+          <button id="developerThemeToggleBtn" class="theme-toggle-pill" aria-label="Toggle Dark and Light Mode" title="Toggle Theme (Dark / Light)">
+            <span class="theme-pill-track">
+              <svg class="theme-icon sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+              <svg class="theme-icon moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </span>
+            <span id="developerThemeLabel" class="theme-pill-label">Dark Mode</span>
+          </button>
+
+          <a href="index.html" class="back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            <span>Back to Dashboard</span>
+          </a>
+        </div>
       </header>
 
       <div class="profile-body">
@@ -429,5 +589,37 @@
       </div>
     </section>
   </div>
+
+  <script>
+    (function () {
+      var toggleBtn = document.getElementById("developerThemeToggleBtn");
+      var label = document.getElementById("developerThemeLabel");
+
+      function updateLabel(theme) {
+        if (label) {
+          label.textContent = theme === "light" ? "Light Mode" : "Dark Mode";
+        }
+      }
+
+      function setTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+        try {
+          localStorage.setItem("dam_safety_theme", theme);
+        } catch (e) {}
+        updateLabel(theme);
+      }
+
+      var initialTheme = document.documentElement.getAttribute("data-theme") || "dark";
+      updateLabel(initialTheme);
+
+      if (toggleBtn) {
+        toggleBtn.addEventListener("click", function () {
+          var current = document.documentElement.getAttribute("data-theme") || "dark";
+          var next = current === "light" ? "dark" : "light";
+          setTheme(next);
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

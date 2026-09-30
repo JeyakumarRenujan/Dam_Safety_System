@@ -5,7 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <meta name="description" content="Intelligent Dam Safety System - Real-time SCADA Water Level Monitoring, Early Flood Warning & Automated Gate Control" />
   <meta name="theme-color" content="#07101c" />
+  <meta name="color-scheme" content="dark light" />
   <title>Smart Dam Safety System | SCADA Monitoring & Control</title>
+
+  <!-- Prevent Theme FOUC -->
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem("dam_safety_theme");
+        var theme = savedTheme ? savedTheme : (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (e) {}
+    })();
+  </script>
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -47,6 +59,24 @@
         <span class="badge-dot"></span>
         <span class="badge-mini-text">Offline</span>
       </div>
+
+      <!-- Quick Theme Toggle for Mobile -->
+      <button id="mobileThemeToggleBtn" class="icon-toggle-btn theme-icon-btn" aria-label="Toggle Dark and Light Mode" title="Toggle Theme (Dark / Light)">
+        <svg class="theme-icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="theme-icon moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
 
       <button id="menuToggleBtn" class="icon-toggle-btn" aria-label="Toggle Navigation Menu">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
@@ -143,6 +173,33 @@
         </div>
       </div>
 
+      <!-- THEME SELECTOR -->
+      <div class="sidebar-theme-panel">
+        <span class="side-label">Display Mode</span>
+        <div class="theme-segmented-ctrl" role="group" aria-label="Theme Selection">
+          <button id="sidebarDarkBtn" class="theme-seg-btn active" data-theme-val="dark" aria-label="Switch to Dark Mode" title="Dark SCADA Theme">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <span>Dark</span>
+          </button>
+          <button id="sidebarLightBtn" class="theme-seg-btn" data-theme-val="light" aria-label="Switch to Light Mode" title="Light Daylight Theme">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <span>Light</span>
+          </button>
+        </div>
+      </div>
+
       <!-- ENGINEER LOGIN BUTTON -->
       <button
         id="adminIconBtn"
@@ -185,6 +242,27 @@
             <span class="pill-label">Risk Level</span>
             <strong id="heroRiskText" class="safe-text">SAFE</strong>
           </div>
+
+          <!-- DESKTOP THEME TOGGLE PILL -->
+          <button id="themeToggleBtn" class="theme-toggle-pill" aria-label="Toggle Dark and Light Mode" title="Toggle Theme (Dark / Light)">
+            <span class="theme-pill-track">
+              <svg class="theme-icon sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+              <svg class="theme-icon moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </span>
+            <span id="themeToggleLabel" class="theme-pill-label">Dark Mode</span>
+          </button>
         </div>
       </header>
 

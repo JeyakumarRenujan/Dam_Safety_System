@@ -79,6 +79,13 @@ const autoBtn = document.getElementById("autoBtn");
 const adminLogoutBtn = document.getElementById("adminLogoutBtn");
 const adminIconBtn = document.getElementById("adminIconBtn");
 
+// Theme Toggle Elements
+const themeToggleBtn = document.getElementById("themeToggleBtn");
+const themeToggleLabel = document.getElementById("themeToggleLabel");
+const sidebarDarkBtn = document.getElementById("sidebarDarkBtn");
+const sidebarLightBtn = document.getElementById("sidebarLightBtn");
+const mobileThemeToggleBtn = document.getElementById("mobileThemeToggleBtn");
+
 // Login Modal
 const loginModal = document.getElementById("loginModal");
 const loginMessage = document.getElementById("loginMessage");
@@ -182,6 +189,128 @@ if (ctx) {
     }
   });
 }
+
+/* --------------------------------------------------------------------------
+   THEME MANAGEMENT (DARK / LIGHT SCADA MODE)
+   -------------------------------------------------------------------------- */
+function applyChartTheme(theme) {
+  if (!levelChart) return;
+  const isLight = theme === "light";
+
+  // Scales & Gridlines
+  if (levelChart.options && levelChart.options.scales) {
+    if (levelChart.options.scales.x) {
+      levelChart.options.scales.x.ticks.color = isLight ? "#475569" : "#64748b";
+      levelChart.options.scales.x.grid.color = isLight ? "rgba(15, 23, 42, 0.08)" : "rgba(148, 163, 184, 0.06)";
+    }
+    if (levelChart.options.scales.y) {
+      levelChart.options.scales.y.ticks.color = isLight ? "#475569" : "#64748b";
+      levelChart.options.scales.y.grid.color = isLight ? "rgba(15, 23, 42, 0.08)" : "rgba(148, 163, 184, 0.06)";
+      if (levelChart.options.scales.y.title) {
+        levelChart.options.scales.y.title.color = isLight ? "#475569" : "#64748b";
+      }
+    }
+  }
+
+  // Tooltip
+  if (levelChart.options && levelChart.options.plugins && levelChart.options.plugins.tooltip) {
+    levelChart.options.plugins.tooltip.backgroundColor = isLight ? "rgba(15, 23, 42, 0.94)" : "rgba(10, 21, 38, 0.94)";
+    levelChart.options.plugins.tooltip.titleColor = "#ffffff";
+    levelChart.options.plugins.tooltip.bodyColor = isLight ? "#60a5fa" : "#93c5fd";
+    levelChart.options.plugins.tooltip.borderColor = isLight ? "rgba(255, 255, 255, 0.15)" : "rgba(148, 163, 184, 0.2)";
+  }
+
+  // Dataset Colors & Gradient
+  if (ctx && levelChart.data && levelChart.data.datasets && levelChart.data.datasets.length > 0) {
+    const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+    if (isLight) {
+      gradient.addColorStop(0, "rgba(37, 99, 235, 0.28)");
+      gradient.addColorStop(1, "rgba(37, 99, 235, 0.02)");
+      levelChart.data.datasets[0].borderColor = "#2563eb";
+      levelChart.data.datasets[0].pointBackgroundColor = "#3b82f6";
+      levelChart.data.datasets[0].pointBorderColor = "#1d4ed8";
+    } else {
+      gradient.addColorStop(0, "rgba(59, 130, 246, 0.35)");
+      gradient.addColorStop(1, "rgba(59, 130, 246, 0.02)");
+      levelChart.data.datasets[0].borderColor = "#60a5fa";
+      levelChart.data.datasets[0].pointBackgroundColor = "#93c5fd";
+      levelChart.data.datasets[0].pointBorderColor = "#3b82f6";
+    }
+    levelChart.data.datasets[0].backgroundColor = gradient;
+  }
+
+  levelChart.update("none");
+}
+
+function updateThemeUI(theme) {
+  const isLight = theme === "light";
+  if (themeToggleLabel) {
+    themeToggleLabel.textContent = isLight ? "Light Mode" : "Dark Mode";
+  }
+  if (sidebarDarkBtn) {
+    sidebarDarkBtn.classList.toggle("active", !isLight);
+  }
+  if (sidebarLightBtn) {
+    sidebarLightBtn.classList.toggle("active", isLight);
+  }
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  try {
+    localStorage.setItem("dam_safety_theme", theme);
+  } catch (e) {}
+
+  updateThemeUI(theme);
+  applyChartTheme(theme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  const next = current === "light" ? "dark" : "light";
+  setTheme(next);
+}
+
+function initTheme() {
+  let theme = "dark";
+  try {
+    const saved = localStorage.getItem("dam_safety_theme");
+    if (saved) {
+      theme = saved;
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+      theme = "light";
+    }
+  } catch (e) {}
+
+  setTheme(theme);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", toggleTheme);
+  }
+  if (mobileThemeToggleBtn) {
+    mobileThemeToggleBtn.addEventListener("click", toggleTheme);
+  }
+  if (sidebarDarkBtn) {
+    sidebarDarkBtn.addEventListener("click", () => setTheme("dark"));
+  }
+  if (sidebarLightBtn) {
+    sidebarLightBtn.addEventListener("click", () => setTheme("light"));
+  }
+
+  // Listen to OS theme changes if user has no saved preference
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+      try {
+        if (!localStorage.getItem("dam_safety_theme")) {
+          setTheme(e.matches ? "dark" : "light");
+        }
+      } catch (err) {}
+    });
+  }
+}
+
+// Initialize Theme immediately
+initTheme();
 
 /* --------------------------------------------------------------------------
    MOBILE DRAWER & NAVIGATION
@@ -800,10 +929,9 @@ function updateButtonState() {
 }
 
 /* --------------------------------------------------------------------------
-   TELEMETRY UPDATE PROCESSOR & POLLING FALLBACK (VERCEL / SERVERLESS COMPATIBLE)
+   SOCKET.IO EVENT RECEIVERS
    -------------------------------------------------------------------------- */
-function applyTelemetryUpdate(data) {
-  if (!data) return;
+socket.on("update", (data) => {
   const level = Number(data.level || 0);
   const state = data.state || "SAFE";
 
@@ -866,36 +994,12 @@ function applyTelemetryUpdate(data) {
 
     levelChart.update();
   }
-}
-
-// HTTP Polling fallback for serverless deployments (Vercel)
-async function pollStatusFallback() {
-  try {
-    const res = await fetch("/api/status");
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data && data.success) {
-      if (typeof data.connected === "boolean") {
-        deviceConnected = data.connected;
-        updateDeviceUI();
-      }
-      applyTelemetryUpdate(data);
-    }
-  } catch (err) {
-    // Ignore network polling drops
-  }
-}
-
-// Socket.IO event listeners
-socket.on("update", applyTelemetryUpdate);
+});
 
 socket.on("device-status", (data) => {
   deviceConnected = Boolean(data.connected);
   updateDeviceUI();
 });
-
-// Periodic fallback polling (every 3 seconds) ensuring live updates on Vercel
-setInterval(pollStatusFallback, 3000);
 
 socket.on("history-cleared", () => {
   readingsHistory.length = 0;
