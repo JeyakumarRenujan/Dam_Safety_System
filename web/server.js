@@ -203,6 +203,28 @@ app.get("/api/command", (req, res) => {
     latestCommand = "";
 });
 
+/* ---------- Manual Control via HTTP (for serverless environments) ---------- */
+app.post("/api/control", (req, res) => {
+    const { command } = req.body;
+    const cmd = String(command || "").trim().toUpperCase();
+
+    if (!isDeviceConnected()) {
+        return res.status(400).json({ success: false, message: "Device offline" });
+    }
+
+    if (cmd === "OPEN" && latestData.gate === "CLOSED") {
+        latestCommand = "OPEN";
+    } else if (cmd === "CLOSE" && latestData.gate === "OPEN") {
+        latestCommand = "CLOSE";
+    } else if (cmd === "AUTO" && latestData.mode === "MANUAL" && latestData.gate === "CLOSED") {
+        latestCommand = "AUTO";
+    } else {
+        return res.status(400).json({ success: false, message: "Invalid state transition" });
+    }
+
+    return res.json({ success: true, command: latestCommand });
+});
+
 /* ---------- Socket ---------- */
 io.on("connection", (socket) => {
     emitAllStatus(socket);

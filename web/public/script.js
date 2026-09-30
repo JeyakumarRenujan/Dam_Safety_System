@@ -3,7 +3,7 @@
    Production-grade WebSocket, UI updates, chart rendering & supervisory control
    ========================================================================== */
 
-const socket = io();
+const socket = (typeof io === "function") ? io() : null;
 
 // State variables
 let deviceConnected = false;
@@ -270,6 +270,11 @@ function toggleTheme() {
   const next = current === "light" ? "dark" : "light";
   setTheme(next);
 }
+
+// Expose globally so inline onclick handlers always work
+window.applyChartTheme = applyChartTheme;
+window.setTheme = setTheme;
+window.toggleTheme = toggleTheme;
 
 function initTheme() {
   let theme = "dark";
@@ -929,9 +934,10 @@ function updateButtonState() {
 }
 
 /* --------------------------------------------------------------------------
-   SOCKET.IO EVENT RECEIVERS
+   SOCKET.IO & TELEMETRY HANDLERS
    -------------------------------------------------------------------------- */
-socket.on("update", (data) => {
+function applyTelemetryUpdate(data) {
+  if (!data) return;
   const level = Number(data.level || 0);
   const state = data.state || "SAFE";
 
@@ -994,17 +1000,42 @@ socket.on("update", (data) => {
 
     levelChart.update();
   }
-});
+}
 
-socket.on("device-status", (data) => {
-  deviceConnected = Boolean(data.connected);
-  updateDeviceUI();
-});
+if (socket) {
+  socket.on("update", applyTelemetryUpdate);
+  socket.on("device-status", (data) => {
+    deviceConnected = Boolean(data && data.connected);
+    updateDeviceUI();
+  });
+  socket.on("history-cleared", () => {
+    readingsHistory.length = 0;
+    renderReadingsTable();
+  });
+}
 
-socket.on("history-cleared", () => {
-  readingsHistory.length = 0;
-  renderReadingsTable();
-});
+// Fallback polling for serverless (Vercel) or disconnected environments
+async function pollStatusFallback() {
+  try {
+    const res = await fetch("/api/status");
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.success) {
+      deviceConnected = Boolean(data.connected);
+      updateDeviceUI();
+      applyTelemetryUpdate(data);
+    }
+  } catch (err) {
+    // Network or server unreachable; ignore silently
+  }
+}
+
+// Poll every 3 seconds if socket is null or not connected
+setInterval(() => {
+  if (!socket || !socket.connected) {
+    pollStatusFallback();
+  }
+}, 3000);
 
 /* --------------------------------------------------------------------------
    ENGINEER LOGIN MODAL & COMMANDS
@@ -1062,15 +1093,32 @@ function logoutAdmin() {
   showToast("warning", "Session Terminated", "Engineer supervisory controls returned to standby.");
 }
 
+async function sendManualControl(command) {
+  if (socket && socket.connected) {
+    socket.emit("manual-control", command);
+  } else {
+    try {
+      await fetch("/api/control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command })
+      });
+      pollStatusFallback();
+    } catch (e) {
+      console.error("Control command dispatch failed", e);
+    }
+  }
+}
+
 function openGate() {
   if (!isAdmin || !deviceConnected || gateStatus !== "CLOSED") return;
-  socket.emit("manual-control", "OPEN");
+  sendManualControl("OPEN");
   showToast("warning", "Open Command Queued", "Command transmitted to ESP8266 actuator controller.");
 }
 
 function closeGate() {
   if (!isAdmin || !deviceConnected || gateStatus !== "OPEN") return;
-  socket.emit("manual-control", "CLOSE");
+  sendManualControl("CLOSE");
   showToast("warning", "Close Command Queued", "Command transmitted to ESP8266 actuator controller.");
 }
 
@@ -1079,7 +1127,7 @@ function returnToAuto() {
   if (controlMode !== "MANUAL") return;
   if (gateStatus !== "CLOSED") return;
 
-  socket.emit("manual-control", "AUTO");
+  sendManualControl("AUTO");
   showToast("safe", "Automatic Control Restored", "Supervisory logic returned to automatic gate actuation.");
 }
 
@@ -1109,5 +1157,8 @@ window.addEventListener("load", () => {
   updateGateUI();
   updateGauge(0);
   renderReadingsTable();
-  socket.emit("request-status");
+  if (socket && socket.connected) {
+    socket.emit("request-status");
+  }
+  pollStatusFallback();
 });

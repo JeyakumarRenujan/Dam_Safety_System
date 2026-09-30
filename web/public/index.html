@@ -8,14 +8,45 @@
   <meta name="color-scheme" content="dark light" />
   <title>Smart Dam Safety System | SCADA Monitoring & Control</title>
 
-  <!-- Prevent Theme FOUC -->
+  <!-- Instant Theme Controller (Zero-FOUC & Bulletproof Toggling) -->
   <script>
     (function () {
-      try {
-        var savedTheme = localStorage.getItem("dam_safety_theme");
-        var theme = savedTheme ? savedTheme : (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+      function getStoredTheme() {
+        try {
+          var saved = localStorage.getItem("dam_safety_theme");
+          if (saved) return saved;
+          return (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
+        } catch (e) {
+          return "dark";
+        }
+      }
+
+      window.setTheme = function (theme) {
         document.documentElement.setAttribute("data-theme", theme);
-      } catch (e) {}
+        try {
+          localStorage.setItem("dam_safety_theme", theme);
+        } catch (e) {}
+
+        var label = document.getElementById("themeToggleLabel");
+        if (label) label.textContent = theme === "light" ? "Light Mode" : "Dark Mode";
+        var darkBtn = document.getElementById("sidebarDarkBtn");
+        var lightBtn = document.getElementById("sidebarLightBtn");
+        if (darkBtn) darkBtn.classList.toggle("active", theme !== "light");
+        if (lightBtn) lightBtn.classList.toggle("active", theme === "light");
+
+        if (typeof window.applyChartTheme === "function") {
+          window.applyChartTheme(theme);
+        }
+      };
+
+      window.toggleTheme = function () {
+        var current = document.documentElement.getAttribute("data-theme") || "dark";
+        var next = current === "light" ? "dark" : "light";
+        window.setTheme(next);
+      };
+
+      var initial = getStoredTheme();
+      document.documentElement.setAttribute("data-theme", initial);
     })();
   </script>
 
@@ -26,7 +57,7 @@
 
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -61,7 +92,7 @@
       </div>
 
       <!-- Quick Theme Toggle for Mobile -->
-      <button id="mobileThemeToggleBtn" class="icon-toggle-btn theme-icon-btn" aria-label="Toggle Dark and Light Mode" title="Toggle Theme (Dark / Light)">
+      <button id="mobileThemeToggleBtn" class="icon-toggle-btn theme-icon-btn" onclick="toggleTheme()" aria-label="Toggle Dark and Light Mode" title="Toggle Theme (Dark / Light)">
         <svg class="theme-icon sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -177,13 +208,13 @@
       <div class="sidebar-theme-panel">
         <span class="side-label">Display Mode</span>
         <div class="theme-segmented-ctrl" role="group" aria-label="Theme Selection">
-          <button id="sidebarDarkBtn" class="theme-seg-btn active" data-theme-val="dark" aria-label="Switch to Dark Mode" title="Dark SCADA Theme">
+          <button id="sidebarDarkBtn" class="theme-seg-btn active" data-theme-val="dark" onclick="setTheme('dark')" aria-label="Switch to Dark Mode" title="Dark SCADA Theme">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
             <span>Dark</span>
           </button>
-          <button id="sidebarLightBtn" class="theme-seg-btn" data-theme-val="light" aria-label="Switch to Light Mode" title="Light Daylight Theme">
+          <button id="sidebarLightBtn" class="theme-seg-btn" data-theme-val="light" onclick="setTheme('light')" aria-label="Switch to Light Mode" title="Light Daylight Theme">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="5"></circle>
               <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -244,7 +275,7 @@
           </div>
 
           <!-- DESKTOP THEME TOGGLE PILL -->
-          <button id="themeToggleBtn" class="theme-toggle-pill" aria-label="Toggle Dark and Light Mode" title="Toggle Theme (Dark / Light)">
+          <button id="themeToggleBtn" class="theme-toggle-pill" onclick="toggleTheme()" aria-label="Toggle Dark and Light Mode" title="Toggle Theme (Dark / Light)">
             <span class="theme-pill-track">
               <svg class="theme-icon sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="5"></circle>

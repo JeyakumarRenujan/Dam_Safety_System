@@ -6,14 +6,37 @@
   <meta name="color-scheme" content="dark light" />
   <title>Developer Profile | Smart Dam Safety System</title>
 
-  <!-- Prevent Theme FOUC -->
+  <!-- Instant Theme Controller (Zero-FOUC & Bulletproof Toggling) -->
   <script>
     (function () {
-      try {
-        var savedTheme = localStorage.getItem("dam_safety_theme");
-        var theme = savedTheme ? savedTheme : (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+      function getStoredTheme() {
+        try {
+          var saved = localStorage.getItem("dam_safety_theme");
+          if (saved) return saved;
+          return (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
+        } catch (e) {
+          return "dark";
+        }
+      }
+
+      window.setTheme = function (theme) {
         document.documentElement.setAttribute("data-theme", theme);
-      } catch (e) {}
+        try {
+          localStorage.setItem("dam_safety_theme", theme);
+        } catch (e) {}
+
+        var label = document.getElementById("developerThemeLabel");
+        if (label) label.textContent = theme === "light" ? "Light Mode" : "Dark Mode";
+      };
+
+      window.toggleTheme = function () {
+        var current = document.documentElement.getAttribute("data-theme") || "dark";
+        var next = current === "light" ? "dark" : "light";
+        window.setTheme(next);
+      };
+
+      var initial = getStoredTheme();
+      document.documentElement.setAttribute("data-theme", initial);
     })();
   </script>
 
@@ -470,7 +493,7 @@
         </div>
 
         <div class="profile-topbar-actions">
-          <button id="developerThemeToggleBtn" class="theme-toggle-pill" aria-label="Toggle Dark and Light Mode" title="Toggle Theme (Dark / Light)">
+          <button id="developerThemeToggleBtn" class="theme-toggle-pill" onclick="toggleTheme()" aria-label="Toggle Dark and Light Mode" title="Toggle Theme (Dark / Light)">
             <span class="theme-pill-track">
               <svg class="theme-icon sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="5"></circle>
